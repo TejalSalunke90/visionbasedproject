@@ -1,0 +1,4552 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "-bpAptnGBf4A"
+   },
+   "source": [
+    "## Vehicle type detection"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {},
+   "outputs": [
+    {
+     "ename": "ModuleNotFoundError",
+     "evalue": "No module named 'tensorflow'",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[1;31m---------------------------------------------------------------------------\u001b[0m",
+      "\u001b[1;31mModuleNotFoundError\u001b[0m                       Traceback (most recent call last)",
+      "\u001b[1;32m~\\AppData\\Local\\Temp/ipykernel_6672/3098460563.py\u001b[0m in \u001b[0;36m<module>\u001b[1;34m\u001b[0m\n\u001b[0;32m      1\u001b[0m \u001b[1;32mimport\u001b[0m \u001b[0mpandas\u001b[0m \u001b[1;32mas\u001b[0m \u001b[0mpd\u001b[0m\u001b[1;33m\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[1;32m----> 2\u001b[1;33m \u001b[1;32mimport\u001b[0m \u001b[0mtensorflow\u001b[0m \u001b[1;32mas\u001b[0m \u001b[0mtf\u001b[0m\u001b[1;33m\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0m\u001b[0;32m      3\u001b[0m \u001b[1;32mimport\u001b[0m \u001b[0mnumpy\u001b[0m \u001b[1;32mas\u001b[0m \u001b[0mnp\u001b[0m\u001b[1;33m\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m      4\u001b[0m \u001b[1;32mimport\u001b[0m \u001b[0mpandas\u001b[0m \u001b[1;32mas\u001b[0m \u001b[0mpd\u001b[0m\u001b[1;33m\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n\u001b[0;32m      5\u001b[0m \u001b[1;32mimport\u001b[0m \u001b[0mpickle\u001b[0m\u001b[1;33m\u001b[0m\u001b[1;33m\u001b[0m\u001b[0m\n",
+      "\u001b[1;31mModuleNotFoundError\u001b[0m: No module named 'tensorflow'"
+     ]
+    }
+   ],
+   "source": [
+    "import pandas as pd\n",
+    "import tensorflow as tf\n",
+    "import numpy as np\n",
+    "import pandas as pd\n",
+    "import pickle\n",
+    "import os\n",
+    "import csv\n",
+    "import cv2\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 56,
+   "metadata": {
+    "id": "eYIOMzGIU8hK"
+   },
+   "outputs": [],
+   "source": [
+    "from sklearn.cluster import KMeans\n",
+    "from sklearn.model_selection import train_test_split\n",
+    "from sklearn.metrics import classification_report\n",
+    "from sklearn.metrics import accuracy_score, confusion_matrix\n",
+    "from sklearn.tree import DecisionTreeClassifier\n",
+    "import sklearn.metrics as metrics\n",
+    "from sklearn.metrics import accuracy_score\n",
+    "import matplotlib.pyplot as plt\n",
+    "\n",
+    "## pip install split-folders\n",
+    "import splitfolders \n",
+    "\n",
+    "from tensorflow.keras.preprocessing.image import ImageDataGenerator\n",
+    "from tensorflow.keras.preprocessing.image import img_to_array\n",
+    "from tensorflow.keras.preprocessing.image import load_img\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {
+    "id": "EwH4PW0EU8hL"
+   },
+   "outputs": [],
+   "source": [
+    "input1=r\"./data/Bus\"\n",
+    "input2=r\"./data/Auto\""
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "doV6ab0MBokM"
+   },
+   "source": [
+    "# Pre-processing"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 24,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "kJgX6uYT1r8V",
+    "outputId": "ff00ee53-e31f-4706-d863-95d4f1330c13"
+   },
+   "outputs": [],
+   "source": [
+    "i=0\n",
+    "for filename in os.listdir(input1):\n",
+    "   \n",
+    "    path=os.path.join(input1,filename)\n",
+    "    a=cv2.imread(path)\n",
+    "    path\n",
+    "    #resize image\n",
+    "    resize=(280,430)\n",
+    "    img=cv2.resize(a,resize)\n",
+    "    \n",
+    "    #gray image\n",
+    "    path= r\"./data/PreBus/\"\n",
+    "    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)\n",
+    "    cv2.imwrite(os.path.join(path, str(i)+'.jpg'), gray)\n",
+    "    i=i+1\n",
+    "\n",
+    "    cv2.waitKey(0)\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 25,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Preprocessing for auto dataset\n",
+    "i=0\n",
+    "for filename in os.listdir(input2):\n",
+    "   \n",
+    "    path=os.path.join(input2,filename)\n",
+    "    a=cv2.imread(path)\n",
+    "    path\n",
+    "    #resize image\n",
+    "    resize=(280,430)\n",
+    "    img=cv2.resize(a,resize)\n",
+    "    \n",
+    "    #gray image\n",
+    "    path= r\"./data/preAuto/\"\n",
+    "    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)\n",
+    "    cv2.imwrite(os.path.join(path, str(i)+'.jpg'), gray)\n",
+    "    i=i+1\n",
+    "\n",
+    "    cv2.waitKey(0)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 27,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "'./data/preAuto/'"
+      ]
+     },
+     "execution_count": 27,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "path"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "'for dirname in os.listdir(\".\"):\\n    if os.path.isdir(dirname):\\n        for i, filename in enumerate(os.listdir(dirname)):\\n            os.rename(dirname + \"/\" + filename, dirname + \"/\" + str(i) + \".bmp\")'"
+      ]
+     },
+     "execution_count": 12,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "'''for dirname in os.listdir(\".\"):\n",
+    "    if os.path.isdir(dirname):\n",
+    "        for i, filename in enumerate(os.listdir(dirname)):\n",
+    "            os.rename(dirname + \"/\" + filename, dirname + \"/\" + str(i) + \".bmp\")'''"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Rename all the images"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 34,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "'os.getcwd()  #  Location of the current working directory\\npath = \"C:/Users/jyoti/JRMWork/cvlab/CP_Vehicle_class/data/Auto/\"\\ncollection = path\\nfor i, filename in enumerate(os.listdir(collection)):\\n    os.rename(path+ filename, path + \"auto\" +str(i) + \".jpg\")'"
+      ]
+     },
+     "execution_count": 34,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "'''os.getcwd()  #  Location of the current working directory\n",
+    "path = \"C:/Users/jyoti/JRMWork/cvlab/CP_Vehicle_class/data/Auto/\"\n",
+    "collection = path\n",
+    "for i, filename in enumerate(os.listdir(collection)):\n",
+    "    os.rename(path+ filename, path + \"auto\" +str(i) + \".jpg\")'''"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 35,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "'os.getcwd()  #  Location of the current working directory\\n\\npath = \"C:/Users/jyoti/JRMWork/cvlab/CP_Vehicle_class/data/Bus/\"\\ncollection = path\\nfor i, filename in enumerate(os.listdir(collection)):\\n    os.rename(path+ filename, path + \"bus\"+ str(i) + \".jpg\")  '"
+      ]
+     },
+     "execution_count": 35,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "'''os.getcwd()  #  Location of the current working directory\n",
+    "\n",
+    "path = \"C:/Users/jyoti/JRMWork/cvlab/CP_Vehicle_class/data/Bus/\"\n",
+    "collection = path\n",
+    "for i, filename in enumerate(os.listdir(collection)):\n",
+    "    os.rename(path+ filename, path + \"bus\"+ str(i) + \".jpg\")  '''"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "#The above cells need to be executed only once\n",
+    "#So comment after renaming\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "input_folder = \"C:/Users/jyoti/JRMWork/cvlab/CP_Vehicle_class/data/\"\n",
+    "output = \"C:/Users/jyoti/JRMWork/cvlab/CP_Vehicle_class/data/\" \n",
+    "\n",
+    "# .75, .25 \n",
+    "\n",
+    "splitfolders.ratio(input_folder, output, seed=10, ratio=(.8, .2))\n",
+    "\n",
+    "# splitfolders.ratio(input_folder, output=\"cell_images2\", seed=42, ratio=(.75, .25)) \n",
+    "# splitfolders.ratio(input_folder, output=\"cell_images2\", seed=42, ratio=(.7, .2, .1))\n",
+    "# .8  .1 .1"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "base_dir = \"C:/Users/jyoti/JRMWork/cvlab/CP_Vehicle_class/data/\"\n",
+    "\n",
+    "train_dir = os.path.join(base_dir, 'train')\n",
+    "validation_dir = os.path.join(base_dir, 'val')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "train_bus_dir = os.path.join(train_dir, 'bus')  # directory with our training cat pictures\n",
+    "train_auto_dir = os.path.join(train_dir, 'auto')  # directory with our training dog pictures\n",
+    "validation_bus_dir = os.path.join(validation_dir, 'bus')  # directory with our validation cat pictures\n",
+    "validation_auto_dir = os.path.join(validation_dir, 'auto')  # directory with our validation dog pictures"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Check the data folders"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "num_bus_tr = len(os.listdir(train_bus_dir))\n",
+    "num_auto_tr = len(os.listdir(train_auto_dir))\n",
+    "\n",
+    "num_bus_val = len(os.listdir(validation_bus_dir))\n",
+    "num_auto_val = len(os.listdir(validation_auto_dir))\n",
+    "\n",
+    "total_train = num_bus_tr + num_auto_tr\n",
+    "total_val = num_bus_val + num_auto_val"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 20,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "train:  219 val:  73\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(\"train: \", total_train, \"val: \", total_val)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "## Data Augmentation"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 28,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "datagen = ImageDataGenerator(\n",
+    "    rotation_range=30,\n",
+    "    zoom_range=0.15, # .1, .2, .3\n",
+    "    width_shift_range=0.2,\n",
+    "    height_shift_range=0.2,\n",
+    "    #rescale=1./255,\n",
+    "    shear_range=0.15,\n",
+    "    horizontal_flip=True,\n",
+    "    fill_mode=\"nearest\")\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 42,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "input1 =  r\"./data/PreBus/\"\n",
+    "input2 =  r\"./data/PreAuto/\"\n",
+    "\n",
+    "i=0\n",
+    "for filename in os.listdir(input1):\n",
+    "   \n",
+    "    path=os.path.join(input1,filename)\n",
+    "    pic = load_img(path)\n",
+    "    pic.getpixel\n",
+    "    pic_array = img_to_array(pic)\n",
+    "    pic_array = pic_array.reshape((1,) + pic_array.shape)\n",
+    "\n",
+    "    count = 0\n",
+    "    output = \"./data/data_aug/train/bus/\"\n",
+    "    for batch in datagen.flow( pic_array, batch_size = 1, save_to_dir=output,  save_prefix='bus', save_format='jpg'):\n",
+    "        count += 1\n",
+    "        if count > 10:\n",
+    "            break\n",
+    "\n",
+    "i=0\n",
+    "for filename in os.listdir(input2):\n",
+    "   \n",
+    "    path=os.path.join(input2,filename)\n",
+    "    pic = load_img(path)\n",
+    "    pic.getpixel\n",
+    "    pic_array = img_to_array(pic)\n",
+    "    pic_array = pic_array.reshape((1,) + pic_array.shape)\n",
+    "\n",
+    "    count = 0\n",
+    "    output = \"./data/data_aug/train/bus/\"\n",
+    "    for batch in datagen.flow( pic_array, batch_size = 1, save_to_dir=output,  save_prefix='bus', save_format='jpg'):\n",
+    "        count += 1\n",
+    "        if count > 10:\n",
+    "            break"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 45,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "\n",
+    "i=0\n",
+    "for filename in os.listdir(input2):\n",
+    "   \n",
+    "    path=os.path.join(input2,filename)\n",
+    "    pic = load_img(path)\n",
+    "    pic.getpixel\n",
+    "    pic_array = img_to_array(pic)\n",
+    "    pic_array = pic_array.reshape((1,) + pic_array.shape)\n",
+    "\n",
+    "    count = 0\n",
+    "    output = \"./data/data_aug/train/auto/\"\n",
+    "    for batch in datagen.flow( pic_array, batch_size = 1, save_to_dir=output,  save_prefix='auto', save_format='jpg'):\n",
+    "        count += 1\n",
+    "        if count > 10:\n",
+    "            break"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 49,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "input1=  r\"./data/data_aug/train/bus/\"\n",
+    "input2=  r\"./data/data_aug/train/auto/\"\n",
+    "#SIFT for input1\n",
+    "i=0\n",
+    "for filename in os.listdir(input1):\n",
+    "    \n",
+    "    path=os.path.join(input1,filename)\n",
+    "    img=cv2.imread(path)\n",
+    "    \n",
+    "    #initialise sift descriptor\n",
+    "    #sift = cv2.xfeatures2d.SIFT_create()\n",
+    "    sift = cv2.SIFT_create()\n",
+    "\n",
+    "    keypoints, descriptors = sift.detectAndCompute(img, None)\n",
+    "    \n",
+    "    #convert the descriptor array into a dataframe format\n",
+    "    out=pd.DataFrame(descriptors)\n",
+    "    #print(\"descriptor shape \",i,\" : \", out.shape)\n",
+    "    i=i+1\n",
+    "    \n",
+    "    #drop first coloumn as it's the no of feature detected. Not required.append to the csv file\n",
+    "    csv_data=out.to_csv('bus_sift1.csv', mode='a', header=False,index=False)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 51,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "UqtvEHzs1r8Y",
+    "outputId": "5221f802-20b3-480b-d36c-f8f2f9525b22"
+   },
+   "outputs": [],
+   "source": [
+    "i=0\n",
+    "for filename in os.listdir(input2):\n",
+    "    \n",
+    "    path=os.path.join(input2,filename)\n",
+    "    a=cv2.imread(path)\n",
+    "    \n",
+    "    #initialise sift descriptor\n",
+    "    #sift = cv2.xfeatures2d.SIFT_create()\n",
+    "    sift = cv2.SIFT_create()\n",
+    "\n",
+    "    keypoints, descriptors = sift.detectAndCompute(gray, None)\n",
+    "    \n",
+    "    #convert the descriptor array into a dataframe format\n",
+    "    out=pd.DataFrame(descriptors)\n",
+    "    #print(\"descriptor shape \",i,\" : \", out.shape)\n",
+    "    i=i+1\n",
+    "    #drop first coloumn as it's the no of feature detected. Not required.append to the csv file\n",
+    "    csv_data=out.to_csv('auto_sift1.csv', mode='a', header=False,index=False)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "vekMqwOwI4Iz",
+    "outputId": "b0e37953-cb78-47fd-ed88-a5735a10d125"
+   },
+   "outputs": [],
+   "source": [
+    "#feature vector dimensions\n",
+    "#bus = 1048576 X 128 = 3717199282 x 128\n",
+    "#auto = 1048576 x 128 = 134217728 x 128"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 59,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Total Keypoints wit blur: 1156\n",
+      "Total Keypoints wit blur: 979\n",
+      "Total Keypoints wit blur: 352\n",
+      "Total Keypoints wit blur: 113\n",
+      "Total Keypoints wit blur: 639\n",
+      "Total Keypoints wit blur: 556\n",
+      "Total Keypoints wit blur: 506\n",
+      "Total Keypoints wit blur: 875\n",
+      "Total Keypoints wit blur: 443\n",
+      "Total Keypoints wit blur: 394\n",
+      "Total Keypoints wit blur: 456\n",
+      "Total Keypoints wit blur: 512\n",
+      "Total Keypoints wit blur: 793\n",
+      "Total Keypoints wit blur: 856\n",
+      "Total Keypoints wit blur: 708\n",
+      "Total Keypoints wit blur: 749\n",
+      "Total Keypoints wit blur: 395\n",
+      "Total Keypoints wit blur: 441\n",
+      "Total Keypoints wit blur: 74\n",
+      "Total Keypoints wit blur: 82\n",
+      "Total Keypoints wit blur: 257\n",
+      "Total Keypoints wit blur: 381\n",
+      "Total Keypoints wit blur: 776\n",
+      "Total Keypoints wit blur: 1033\n",
+      "Total Keypoints wit blur: 605\n",
+      "Total Keypoints wit blur: 904\n",
+      "Total Keypoints wit blur: 182\n",
+      "Total Keypoints wit blur: 241\n",
+      "Total Keypoints wit blur: 389\n",
+      "Total Keypoints wit blur: 374\n",
+      "Total Keypoints wit blur: 1070\n",
+      "Total Keypoints wit blur: 559\n",
+      "Total Keypoints wit blur: 889\n",
+      "Total Keypoints wit blur: 871\n",
+      "Total Keypoints wit blur: 638\n",
+      "Total Keypoints wit blur: 510\n",
+      "Total Keypoints wit blur: 437\n",
+      "Total Keypoints wit blur: 999\n",
+      "Total Keypoints wit blur: 408\n",
+      "Total Keypoints wit blur: 775\n",
+      "Total Keypoints wit blur: 366\n",
+      "Total Keypoints wit blur: 926\n",
+      "Total Keypoints wit blur: 757\n",
+      "Total Keypoints wit blur: 222\n",
+      "Total Keypoints wit blur: 557\n",
+      "Total Keypoints wit blur: 437\n",
+      "Total Keypoints wit blur: 641\n",
+      "Total Keypoints wit blur: 213\n",
+      "Total Keypoints wit blur: 228\n",
+      "Total Keypoints wit blur: 739\n",
+      "Total Keypoints wit blur: 591\n",
+      "Total Keypoints wit blur: 567\n",
+      "Total Keypoints wit blur: 616\n",
+      "Total Keypoints wit blur: 132\n",
+      "Total Keypoints wit blur: 415\n",
+      "Total Keypoints wit blur: 442\n",
+      "Total Keypoints wit blur: 745\n",
+      "Total Keypoints wit blur: 708\n",
+      "Total Keypoints wit blur: 857\n",
+      "Total Keypoints wit blur: 1102\n",
+      "Total Keypoints wit blur: 336\n",
+      "Total Keypoints wit blur: 350\n",
+      "Total Keypoints wit blur: 637\n",
+      "Total Keypoints wit blur: 201\n",
+      "Total Keypoints wit blur: 803\n",
+      "Total Keypoints wit blur: 373\n",
+      "Total Keypoints wit blur: 976\n",
+      "Total Keypoints wit blur: 450\n",
+      "Total Keypoints wit blur: 889\n",
+      "Total Keypoints wit blur: 291\n",
+      "Total Keypoints wit blur: 422\n",
+      "Total Keypoints wit blur: 354\n",
+      "Total Keypoints wit blur: 876\n",
+      "Total Keypoints wit blur: 589\n",
+      "Total Keypoints wit blur: 643\n",
+      "Total Keypoints wit blur: 739\n",
+      "Total Keypoints wit blur: 1450\n",
+      "Total Keypoints wit blur: 180\n",
+      "Total Keypoints wit blur: 552\n",
+      "Total Keypoints wit blur: 1182\n",
+      "Total Keypoints wit blur: 215\n",
+      "Total Keypoints wit blur: 980\n",
+      "Total Keypoints wit blur: 733\n",
+      "Total Keypoints wit blur: 612\n",
+      "Total Keypoints wit blur: 1036\n",
+      "Total Keypoints wit blur: 267\n",
+      "Total Keypoints wit blur: 644\n",
+      "Total Keypoints wit blur: 760\n",
+      "Total Keypoints wit blur: 793\n",
+      "Total Keypoints wit blur: 553\n",
+      "Total Keypoints wit blur: 627\n",
+      "Total Keypoints wit blur: 511\n",
+      "Total Keypoints wit blur: 521\n",
+      "Total Keypoints wit blur: 565\n",
+      "Total Keypoints wit blur: 363\n",
+      "Total Keypoints wit blur: 682\n",
+      "Total Keypoints wit blur: 957\n",
+      "Total Keypoints wit blur: 811\n",
+      "Total Keypoints wit blur: 559\n",
+      "Total Keypoints wit blur: 742\n",
+      "Total Keypoints wit blur: 1728\n",
+      "Total Keypoints wit blur: 602\n",
+      "Total Keypoints wit blur: 866\n",
+      "Total Keypoints wit blur: 979\n",
+      "Total Keypoints wit blur: 325\n",
+      "Total Keypoints wit blur: 451\n",
+      "Total Keypoints wit blur: 1098\n",
+      "Total Keypoints wit blur: 601\n",
+      "Total Keypoints wit blur: 1018\n",
+      "Total Keypoints wit blur: 347\n",
+      "Total Keypoints wit blur: 464\n",
+      "Total Keypoints wit blur: 251\n",
+      "Total Keypoints wit blur: 168\n",
+      "Total Keypoints wit blur: 208\n",
+      "Total Keypoints wit blur: 678\n",
+      "Total Keypoints wit blur: 1045\n",
+      "Total Keypoints wit blur: 431\n",
+      "Total Keypoints wit blur: 377\n",
+      "Total Keypoints wit blur: 516\n",
+      "Total Keypoints wit blur: 293\n",
+      "Total Keypoints wit blur: 990\n",
+      "Total Keypoints wit blur: 345\n",
+      "Total Keypoints wit blur: 969\n",
+      "Total Keypoints wit blur: 198\n",
+      "Total Keypoints wit blur: 659\n",
+      "Total Keypoints wit blur: 375\n",
+      "Total Keypoints wit blur: 348\n",
+      "Total Keypoints wit blur: 670\n",
+      "Total Keypoints wit blur: 130\n",
+      "Total Keypoints wit blur: 97\n",
+      "Total Keypoints wit blur: 541\n",
+      "Total Keypoints wit blur: 842\n",
+      "Total Keypoints wit blur: 747\n",
+      "Total Keypoints wit blur: 76\n",
+      "Total Keypoints wit blur: 522\n",
+      "Total Keypoints wit blur: 602\n",
+      "Total Keypoints wit blur: 799\n",
+      "Total Keypoints wit blur: 807\n",
+      "Total Keypoints wit blur: 399\n",
+      "Total Keypoints wit blur: 516\n",
+      "Total Keypoints wit blur: 912\n",
+      "Total Keypoints wit blur: 529\n",
+      "Total Keypoints wit blur: 763\n",
+      "Total Keypoints wit blur: 287\n",
+      "Total Keypoints wit blur: 766\n",
+      "Total Keypoints wit blur: 382\n",
+      "Total Keypoints wit blur: 1285\n",
+      "Total Keypoints wit blur: 506\n",
+      "Total Keypoints wit blur: 628\n",
+      "Total Keypoints wit blur: 398\n",
+      "Total Keypoints wit blur: 262\n",
+      "Total Keypoints wit blur: 1018\n",
+      "Total Keypoints wit blur: 358\n",
+      "Total Keypoints wit blur: 684\n",
+      "Total Keypoints wit blur: 454\n",
+      "Total Keypoints wit blur: 394\n",
+      "Total Keypoints wit blur: 537\n",
+      "Total Keypoints wit blur: 505\n",
+      "Total Keypoints wit blur: 891\n",
+      "Total Keypoints wit blur: 1080\n",
+      "Total Keypoints wit blur: 327\n",
+      "Total Keypoints wit blur: 670\n",
+      "Total Keypoints wit blur: 283\n",
+      "Total Keypoints wit blur: 635\n",
+      "Total Keypoints wit blur: 821\n",
+      "Total Keypoints wit blur: 211\n",
+      "Total Keypoints wit blur: 1051\n",
+      "Total Keypoints wit blur: 483\n",
+      "Total Keypoints wit blur: 109\n",
+      "Total Keypoints wit blur: 519\n",
+      "Total Keypoints wit blur: 162\n",
+      "Total Keypoints wit blur: 669\n",
+      "Total Keypoints wit blur: 471\n",
+      "Total Keypoints wit blur: 621\n",
+      "Total Keypoints wit blur: 272\n",
+      "Total Keypoints wit blur: 545\n",
+      "Total Keypoints wit blur: 461\n",
+      "Total Keypoints wit blur: 120\n",
+      "Total Keypoints wit blur: 525\n",
+      "Total Keypoints wit blur: 833\n",
+      "Total Keypoints wit blur: 907\n",
+      "Total Keypoints wit blur: 827\n",
+      "Total Keypoints wit blur: 780\n",
+      "Total Keypoints wit blur: 501\n",
+      "Total Keypoints wit blur: 157\n",
+      "Total Keypoints wit blur: 300\n",
+      "Total Keypoints wit blur: 856\n",
+      "Total Keypoints wit blur: 615\n",
+      "Total Keypoints wit blur: 1119\n",
+      "Total Keypoints wit blur: 508\n",
+      "Total Keypoints wit blur: 911\n",
+      "Total Keypoints wit blur: 630\n",
+      "Total Keypoints wit blur: 626\n",
+      "Total Keypoints wit blur: 795\n",
+      "Total Keypoints wit blur: 267\n",
+      "Total Keypoints wit blur: 579\n",
+      "Total Keypoints wit blur: 723\n",
+      "Total Keypoints wit blur: 495\n",
+      "Total Keypoints wit blur: 474\n",
+      "Total Keypoints wit blur: 304\n",
+      "Total Keypoints wit blur: 385\n",
+      "Total Keypoints wit blur: 167\n",
+      "Total Keypoints wit blur: 865\n",
+      "Total Keypoints wit blur: 1197\n",
+      "Total Keypoints wit blur: 390\n",
+      "Total Keypoints wit blur: 320\n",
+      "Total Keypoints wit blur: 654\n",
+      "Total Keypoints wit blur: 398\n",
+      "Total Keypoints wit blur: 1220\n",
+      "Total Keypoints wit blur: 67\n",
+      "Total Keypoints wit blur: 884\n",
+      "Total Keypoints wit blur: 618\n",
+      "Total Keypoints wit blur: 446\n",
+      "Total Keypoints wit blur: 1315\n",
+      "Total Keypoints wit blur: 1006\n",
+      "Total Keypoints wit blur: 941\n",
+      "Total Keypoints wit blur: 905\n",
+      "Total Keypoints wit blur: 800\n",
+      "Total Keypoints wit blur: 502\n",
+      "Total Keypoints wit blur: 1032\n",
+      "Total Keypoints wit blur: 873\n",
+      "Total Keypoints wit blur: 64\n",
+      "Total Keypoints wit blur: 1146\n",
+      "Total Keypoints wit blur: 421\n",
+      "Total Keypoints wit blur: 1257\n",
+      "Total Keypoints wit blur: 487\n",
+      "Total Keypoints wit blur: 215\n",
+      "Total Keypoints wit blur: 455\n",
+      "Total Keypoints wit blur: 854\n",
+      "Total Keypoints wit blur: 379\n",
+      "Total Keypoints wit blur: 244\n",
+      "Total Keypoints wit blur: 521\n",
+      "Total Keypoints wit blur: 371\n",
+      "Total Keypoints wit blur: 111\n",
+      "Total Keypoints wit blur: 446\n",
+      "Total Keypoints wit blur: 840\n",
+      "Total Keypoints wit blur: 324\n",
+      "Total Keypoints wit blur: 759\n",
+      "Total Keypoints wit blur: 300\n",
+      "Total Keypoints wit blur: 517\n",
+      "Total Keypoints wit blur: 325\n",
+      "Total Keypoints wit blur: 672\n",
+      "Total Keypoints wit blur: 926\n",
+      "Total Keypoints wit blur: 414\n",
+      "Total Keypoints wit blur: 701\n",
+      "Total Keypoints wit blur: 789\n",
+      "Total Keypoints wit blur: 262\n",
+      "Total Keypoints wit blur: 768\n",
+      "Total Keypoints wit blur: 791\n",
+      "Total Keypoints wit blur: 405\n",
+      "Total Keypoints wit blur: 687\n",
+      "Total Keypoints wit blur: 902\n",
+      "Total Keypoints wit blur: 1130\n",
+      "Total Keypoints wit blur: 954\n",
+      "Total Keypoints wit blur: 418\n",
+      "Total Keypoints wit blur: 288\n",
+      "Total Keypoints wit blur: 481\n",
+      "Total Keypoints wit blur: 596\n",
+      "Total Keypoints wit blur: 256\n",
+      "Total Keypoints wit blur: 602\n",
+      "Total Keypoints wit blur: 919\n",
+      "Total Keypoints wit blur: 415\n",
+      "Total Keypoints wit blur: 173\n",
+      "Total Keypoints wit blur: 304\n",
+      "Total Keypoints wit blur: 565\n",
+      "Total Keypoints wit blur: 567\n",
+      "Total Keypoints wit blur: 596\n",
+      "Total Keypoints wit blur: 304\n",
+      "Total Keypoints wit blur: 476\n",
+      "Total Keypoints wit blur: 446\n",
+      "Total Keypoints wit blur: 688\n",
+      "Total Keypoints wit blur: 288\n",
+      "Total Keypoints wit blur: 746\n",
+      "Total Keypoints wit blur: 488\n",
+      "Total Keypoints wit blur: 344\n",
+      "Total Keypoints wit blur: 188\n",
+      "Total Keypoints wit blur: 189\n",
+      "Total Keypoints wit blur: 818\n",
+      "Total Keypoints wit blur: 475\n",
+      "Total Keypoints wit blur: 396\n",
+      "Total Keypoints wit blur: 456\n",
+      "Total Keypoints wit blur: 483\n",
+      "Total Keypoints wit blur: 1126\n",
+      "Total Keypoints wit blur: 531\n",
+      "Total Keypoints wit blur: 1001\n",
+      "Total Keypoints wit blur: 386\n",
+      "Total Keypoints wit blur: 137\n",
+      "Total Keypoints wit blur: 544\n",
+      "Total Keypoints wit blur: 452\n",
+      "Total Keypoints wit blur: 608\n",
+      "Total Keypoints wit blur: 1235\n",
+      "Total Keypoints wit blur: 661\n",
+      "Total Keypoints wit blur: 1332\n",
+      "Total Keypoints wit blur: 115\n",
+      "Total Keypoints wit blur: 532\n",
+      "Total Keypoints wit blur: 454\n",
+      "Total Keypoints wit blur: 426\n",
+      "Total Keypoints wit blur: 590\n",
+      "Total Keypoints wit blur: 468\n",
+      "Total Keypoints wit blur: 256\n",
+      "Total Keypoints wit blur: 863\n",
+      "Total Keypoints wit blur: 374\n",
+      "Total Keypoints wit blur: 338\n",
+      "Total Keypoints wit blur: 283\n",
+      "Total Keypoints wit blur: 1053\n",
+      "Total Keypoints wit blur: 753\n",
+      "Total Keypoints wit blur: 864\n",
+      "Total Keypoints wit blur: 179\n",
+      "Total Keypoints wit blur: 751\n",
+      "Total Keypoints wit blur: 158\n",
+      "Total Keypoints wit blur: 727\n",
+      "Total Keypoints wit blur: 813\n",
+      "Total Keypoints wit blur: 488\n",
+      "Total Keypoints wit blur: 678\n",
+      "Total Keypoints wit blur: 109\n",
+      "Total Keypoints wit blur: 158\n",
+      "Total Keypoints wit blur: 664\n",
+      "Total Keypoints wit blur: 365\n",
+      "Total Keypoints wit blur: 696\n",
+      "Total Keypoints wit blur: 279\n",
+      "Total Keypoints wit blur: 157\n",
+      "Total Keypoints wit blur: 538\n",
+      "Total Keypoints wit blur: 719\n",
+      "Total Keypoints wit blur: 218\n",
+      "Total Keypoints wit blur: 864\n",
+      "Total Keypoints wit blur: 860\n",
+      "Total Keypoints wit blur: 715\n",
+      "Total Keypoints wit blur: 437\n",
+      "Total Keypoints wit blur: 395\n",
+      "Total Keypoints wit blur: 466\n",
+      "Total Keypoints wit blur: 392\n",
+      "Total Keypoints wit blur: 1026\n",
+      "Total Keypoints wit blur: 544\n",
+      "Total Keypoints wit blur: 784\n",
+      "Total Keypoints wit blur: 269\n",
+      "Total Keypoints wit blur: 526\n",
+      "Total Keypoints wit blur: 851\n",
+      "Total Keypoints wit blur: 834\n",
+      "Total Keypoints wit blur: 427\n",
+      "Total Keypoints wit blur: 695\n",
+      "Total Keypoints wit blur: 213\n",
+      "Total Keypoints wit blur: 422\n",
+      "Total Keypoints wit blur: 1155\n",
+      "Total Keypoints wit blur: 312\n",
+      "Total Keypoints wit blur: 569\n",
+      "Total Keypoints wit blur: 210\n",
+      "Total Keypoints wit blur: 184\n",
+      "Total Keypoints wit blur: 357\n",
+      "Total Keypoints wit blur: 612\n",
+      "Total Keypoints wit blur: 419\n",
+      "Total Keypoints wit blur: 161\n",
+      "Total Keypoints wit blur: 366\n",
+      "Total Keypoints wit blur: 870\n",
+      "Total Keypoints wit blur: 308\n",
+      "Total Keypoints wit blur: 606\n",
+      "Total Keypoints wit blur: 323\n",
+      "Total Keypoints wit blur: 797\n",
+      "Total Keypoints wit blur: 773\n",
+      "Total Keypoints wit blur: 295\n",
+      "Total Keypoints wit blur: 1133\n",
+      "Total Keypoints wit blur: 319\n",
+      "Total Keypoints wit blur: 31\n",
+      "Total Keypoints wit blur: 154\n",
+      "Total Keypoints wit blur: 786\n",
+      "Total Keypoints wit blur: 383\n",
+      "Total Keypoints wit blur: 548\n",
+      "Total Keypoints wit blur: 571\n",
+      "Total Keypoints wit blur: 633\n",
+      "Total Keypoints wit blur: 152\n",
+      "Total Keypoints wit blur: 244\n",
+      "Total Keypoints wit blur: 1017\n",
+      "Total Keypoints wit blur: 523\n",
+      "Total Keypoints wit blur: 463\n",
+      "Total Keypoints wit blur: 606\n",
+      "Total Keypoints wit blur: 596\n",
+      "Total Keypoints wit blur: 785\n",
+      "Total Keypoints wit blur: 971\n",
+      "Total Keypoints wit blur: 94\n",
+      "Total Keypoints wit blur: 356\n",
+      "Total Keypoints wit blur: 1271\n",
+      "Total Keypoints wit blur: 1224\n",
+      "Total Keypoints wit blur: 469\n",
+      "Total Keypoints wit blur: 614\n",
+      "Total Keypoints wit blur: 638\n",
+      "Total Keypoints wit blur: 88\n",
+      "Total Keypoints wit blur: 440\n",
+      "Total Keypoints wit blur: 338\n",
+      "Total Keypoints wit blur: 896\n",
+      "Total Keypoints wit blur: 233\n",
+      "Total Keypoints wit blur: 428\n",
+      "Total Keypoints wit blur: 996\n",
+      "Total Keypoints wit blur: 443\n",
+      "Total Keypoints wit blur: 181\n",
+      "Total Keypoints wit blur: 711\n",
+      "Total Keypoints wit blur: 1790\n",
+      "Total Keypoints wit blur: 321\n",
+      "Total Keypoints wit blur: 734\n",
+      "Total Keypoints wit blur: 125\n",
+      "Total Keypoints wit blur: 594\n",
+      "Total Keypoints wit blur: 345\n",
+      "Total Keypoints wit blur: 759\n",
+      "Total Keypoints wit blur: 317\n",
+      "Total Keypoints wit blur: 806\n",
+      "Total Keypoints wit blur: 1279\n",
+      "Total Keypoints wit blur: 1339\n",
+      "Total Keypoints wit blur: 433\n",
+      "Total Keypoints wit blur: 932\n",
+      "Total Keypoints wit blur: 761\n",
+      "Total Keypoints wit blur: 465\n",
+      "Total Keypoints wit blur: 392\n",
+      "Total Keypoints wit blur: 637\n",
+      "Total Keypoints wit blur: 816\n",
+      "Total Keypoints wit blur: 821\n",
+      "Total Keypoints wit blur: 366\n",
+      "Total Keypoints wit blur: 302\n",
+      "Total Keypoints wit blur: 439\n",
+      "Total Keypoints wit blur: 762\n",
+      "Total Keypoints wit blur: 619\n",
+      "Total Keypoints wit blur: 375\n",
+      "Total Keypoints wit blur: 159\n",
+      "Total Keypoints wit blur: 814\n",
+      "Total Keypoints wit blur: 138\n",
+      "Total Keypoints wit blur: 611\n",
+      "Total Keypoints wit blur: 179\n",
+      "Total Keypoints wit blur: 554\n",
+      "Total Keypoints wit blur: 442\n",
+      "Total Keypoints wit blur: 518\n",
+      "Total Keypoints wit blur: 407\n",
+      "Total Keypoints wit blur: 813\n",
+      "Total Keypoints wit blur: 1036\n",
+      "Total Keypoints wit blur: 472\n",
+      "Total Keypoints wit blur: 255\n",
+      "Total Keypoints wit blur: 644\n",
+      "Total Keypoints wit blur: 845\n",
+      "Total Keypoints wit blur: 220\n",
+      "Total Keypoints wit blur: 261\n",
+      "Total Keypoints wit blur: 653\n",
+      "Total Keypoints wit blur: 811\n",
+      "Total Keypoints wit blur: 825\n",
+      "Total Keypoints wit blur: 509\n",
+      "Total Keypoints wit blur: 992\n",
+      "Total Keypoints wit blur: 972\n",
+      "Total Keypoints wit blur: 722\n",
+      "Total Keypoints wit blur: 272\n",
+      "Total Keypoints wit blur: 403\n",
+      "Total Keypoints wit blur: 261\n",
+      "Total Keypoints wit blur: 617\n",
+      "Total Keypoints wit blur: 328\n",
+      "Total Keypoints wit blur: 1132\n",
+      "Total Keypoints wit blur: 496\n",
+      "Total Keypoints wit blur: 465\n",
+      "Total Keypoints wit blur: 626\n",
+      "Total Keypoints wit blur: 375\n",
+      "Total Keypoints wit blur: 371\n",
+      "Total Keypoints wit blur: 475\n",
+      "Total Keypoints wit blur: 264\n",
+      "Total Keypoints wit blur: 1110\n",
+      "Total Keypoints wit blur: 790\n",
+      "Total Keypoints wit blur: 180\n",
+      "Total Keypoints wit blur: 838\n",
+      "Total Keypoints wit blur: 564\n",
+      "Total Keypoints wit blur: 366\n",
+      "Total Keypoints wit blur: 555\n",
+      "Total Keypoints wit blur: 554\n",
+      "Total Keypoints wit blur: 1254\n",
+      "Total Keypoints wit blur: 232\n",
+      "Total Keypoints wit blur: 804\n",
+      "Total Keypoints wit blur: 697\n",
+      "Total Keypoints wit blur: 1061\n",
+      "Total Keypoints wit blur: 1001\n",
+      "Total Keypoints wit blur: 956\n",
+      "Total Keypoints wit blur: 991\n",
+      "Total Keypoints wit blur: 451\n",
+      "Total Keypoints wit blur: 626\n",
+      "Total Keypoints wit blur: 566\n",
+      "Total Keypoints wit blur: 185\n",
+      "Total Keypoints wit blur: 1008\n",
+      "Total Keypoints wit blur: 93\n",
+      "Total Keypoints wit blur: 950\n",
+      "Total Keypoints wit blur: 386\n",
+      "Total Keypoints wit blur: 367\n",
+      "Total Keypoints wit blur: 507\n",
+      "Total Keypoints wit blur: 353\n",
+      "Total Keypoints wit blur: 958\n",
+      "Total Keypoints wit blur: 796\n",
+      "Total Keypoints wit blur: 737\n",
+      "Total Keypoints wit blur: 676\n",
+      "Total Keypoints wit blur: 906\n",
+      "Total Keypoints wit blur: 365\n",
+      "Total Keypoints wit blur: 654\n",
+      "Total Keypoints wit blur: 114\n",
+      "Total Keypoints wit blur: 735\n",
+      "Total Keypoints wit blur: 1169\n",
+      "Total Keypoints wit blur: 795\n",
+      "Total Keypoints wit blur: 1331\n",
+      "Total Keypoints wit blur: 372\n",
+      "Total Keypoints wit blur: 214\n",
+      "Total Keypoints wit blur: 148\n",
+      "Total Keypoints wit blur: 478\n",
+      "Total Keypoints wit blur: 438\n",
+      "Total Keypoints wit blur: 113\n",
+      "Total Keypoints wit blur: 215\n",
+      "Total Keypoints wit blur: 710\n",
+      "Total Keypoints wit blur: 70\n",
+      "Total Keypoints wit blur: 420\n",
+      "Total Keypoints wit blur: 796\n",
+      "Total Keypoints wit blur: 746\n",
+      "Total Keypoints wit blur: 727\n",
+      "Total Keypoints wit blur: 338\n",
+      "Total Keypoints wit blur: 403\n",
+      "Total Keypoints wit blur: 451\n",
+      "Total Keypoints wit blur: 745\n",
+      "Total Keypoints wit blur: 451\n",
+      "Total Keypoints wit blur: 400\n",
+      "Total Keypoints wit blur: 1063\n",
+      "Total Keypoints wit blur: 404\n",
+      "Total Keypoints wit blur: 366\n",
+      "Total Keypoints wit blur: 392\n",
+      "Total Keypoints wit blur: 610\n",
+      "Total Keypoints wit blur: 270\n",
+      "Total Keypoints wit blur: 1067\n",
+      "Total Keypoints wit blur: 289\n",
+      "Total Keypoints wit blur: 327\n",
+      "Total Keypoints wit blur: 135\n",
+      "Total Keypoints wit blur: 726\n",
+      "Total Keypoints wit blur: 433\n",
+      "Total Keypoints wit blur: 383\n",
+      "Total Keypoints wit blur: 425\n",
+      "Total Keypoints wit blur: 330\n",
+      "Total Keypoints wit blur: 292\n",
+      "Total Keypoints wit blur: 284\n",
+      "Total Keypoints wit blur: 847\n",
+      "Total Keypoints wit blur: 153\n",
+      "Total Keypoints wit blur: 752\n",
+      "Total Keypoints wit blur: 840\n",
+      "Total Keypoints wit blur: 1264\n",
+      "Total Keypoints wit blur: 601\n",
+      "Total Keypoints wit blur: 1061\n",
+      "Total Keypoints wit blur: 1351\n",
+      "Total Keypoints wit blur: 442\n",
+      "Total Keypoints wit blur: 420\n",
+      "Total Keypoints wit blur: 129\n",
+      "Total Keypoints wit blur: 64\n",
+      "Total Keypoints wit blur: 156\n",
+      "Total Keypoints wit blur: 592\n",
+      "Total Keypoints wit blur: 756\n",
+      "Total Keypoints wit blur: 731\n",
+      "Total Keypoints wit blur: 314\n",
+      "Total Keypoints wit blur: 821\n",
+      "Total Keypoints wit blur: 880\n",
+      "Total Keypoints wit blur: 1387\n",
+      "Total Keypoints wit blur: 129\n",
+      "Total Keypoints wit blur: 270\n",
+      "Total Keypoints wit blur: 1332\n",
+      "Total Keypoints wit blur: 85\n",
+      "Total Keypoints wit blur: 830\n",
+      "Total Keypoints wit blur: 770\n",
+      "Total Keypoints wit blur: 938\n",
+      "Total Keypoints wit blur: 1208\n",
+      "Total Keypoints wit blur: 128\n",
+      "Total Keypoints wit blur: 307\n",
+      "Total Keypoints wit blur: 562\n",
+      "Total Keypoints wit blur: 365\n",
+      "Total Keypoints wit blur: 356\n",
+      "Total Keypoints wit blur: 608\n",
+      "Total Keypoints wit blur: 337\n",
+      "Total Keypoints wit blur: 1157\n",
+      "Total Keypoints wit blur: 517\n",
+      "Total Keypoints wit blur: 746\n",
+      "Total Keypoints wit blur: 701\n",
+      "Total Keypoints wit blur: 1283\n",
+      "Total Keypoints wit blur: 493\n",
+      "Total Keypoints wit blur: 474\n",
+      "Total Keypoints wit blur: 518\n",
+      "Total Keypoints wit blur: 558\n",
+      "Total Keypoints wit blur: 493\n",
+      "Total Keypoints wit blur: 579\n",
+      "Total Keypoints wit blur: 455\n",
+      "Total Keypoints wit blur: 714\n",
+      "Total Keypoints wit blur: 433\n",
+      "Total Keypoints wit blur: 681\n",
+      "Total Keypoints wit blur: 187\n",
+      "Total Keypoints wit blur: 578\n",
+      "Total Keypoints wit blur: 683\n",
+      "Total Keypoints wit blur: 472\n",
+      "Total Keypoints wit blur: 638\n",
+      "Total Keypoints wit blur: 1109\n",
+      "Total Keypoints wit blur: 106\n",
+      "Total Keypoints wit blur: 598\n",
+      "Total Keypoints wit blur: 337\n",
+      "Total Keypoints wit blur: 997\n",
+      "Total Keypoints wit blur: 648\n",
+      "Total Keypoints wit blur: 745\n",
+      "Total Keypoints wit blur: 1326\n",
+      "Total Keypoints wit blur: 731\n",
+      "Total Keypoints wit blur: 133\n",
+      "Total Keypoints wit blur: 905\n",
+      "Total Keypoints wit blur: 928\n",
+      "Total Keypoints wit blur: 482\n",
+      "Total Keypoints wit blur: 338\n",
+      "Total Keypoints wit blur: 861\n",
+      "Total Keypoints wit blur: 674\n",
+      "Total Keypoints wit blur: 799\n",
+      "Total Keypoints wit blur: 1029\n",
+      "Total Keypoints wit blur: 219\n",
+      "Total Keypoints wit blur: 489\n",
+      "Total Keypoints wit blur: 450\n",
+      "Total Keypoints wit blur: 159\n",
+      "Total Keypoints wit blur: 829\n",
+      "Total Keypoints wit blur: 378\n",
+      "Total Keypoints wit blur: 347\n",
+      "Total Keypoints wit blur: 642\n",
+      "Total Keypoints wit blur: 304\n",
+      "Total Keypoints wit blur: 362\n",
+      "Total Keypoints wit blur: 543\n",
+      "Total Keypoints wit blur: 609\n",
+      "Total Keypoints wit blur: 420\n",
+      "Total Keypoints wit blur: 522\n",
+      "Total Keypoints wit blur: 517\n",
+      "Total Keypoints wit blur: 218\n",
+      "Total Keypoints wit blur: 137\n",
+      "Total Keypoints wit blur: 276\n",
+      "Total Keypoints wit blur: 440\n",
+      "Total Keypoints wit blur: 707\n",
+      "Total Keypoints wit blur: 294\n",
+      "Total Keypoints wit blur: 366\n",
+      "Total Keypoints wit blur: 166\n",
+      "Total Keypoints wit blur: 1289\n",
+      "Total Keypoints wit blur: 186\n",
+      "Total Keypoints wit blur: 766\n",
+      "Total Keypoints wit blur: 657\n",
+      "Total Keypoints wit blur: 662\n",
+      "Total Keypoints wit blur: 318\n",
+      "Total Keypoints wit blur: 752\n",
+      "Total Keypoints wit blur: 507\n",
+      "Total Keypoints wit blur: 189\n",
+      "Total Keypoints wit blur: 1972\n",
+      "Total Keypoints wit blur: 1075\n",
+      "Total Keypoints wit blur: 1177\n",
+      "Total Keypoints wit blur: 705\n",
+      "Total Keypoints wit blur: 751\n",
+      "Total Keypoints wit blur: 671\n",
+      "Total Keypoints wit blur: 569\n",
+      "Total Keypoints wit blur: 491\n",
+      "Total Keypoints wit blur: 326\n",
+      "Total Keypoints wit blur: 1521\n",
+      "Total Keypoints wit blur: 504\n",
+      "Total Keypoints wit blur: 318\n",
+      "Total Keypoints wit blur: 1134\n",
+      "Total Keypoints wit blur: 416\n",
+      "Total Keypoints wit blur: 261\n",
+      "Total Keypoints wit blur: 760\n",
+      "Total Keypoints wit blur: 217\n",
+      "Total Keypoints wit blur: 971\n",
+      "Total Keypoints wit blur: 540\n",
+      "Total Keypoints wit blur: 348\n",
+      "Total Keypoints wit blur: 1122\n",
+      "Total Keypoints wit blur: 1130\n",
+      "Total Keypoints wit blur: 412\n",
+      "Total Keypoints wit blur: 456\n",
+      "Total Keypoints wit blur: 748\n",
+      "Total Keypoints wit blur: 384\n",
+      "Total Keypoints wit blur: 410\n",
+      "Total Keypoints wit blur: 524\n",
+      "Total Keypoints wit blur: 367\n",
+      "Total Keypoints wit blur: 216\n",
+      "Total Keypoints wit blur: 438\n",
+      "Total Keypoints wit blur: 167\n",
+      "Total Keypoints wit blur: 270\n",
+      "Total Keypoints wit blur: 1140\n",
+      "Total Keypoints wit blur: 676\n",
+      "Total Keypoints wit blur: 729\n",
+      "Total Keypoints wit blur: 544\n",
+      "Total Keypoints wit blur: 101\n",
+      "Total Keypoints wit blur: 342\n",
+      "Total Keypoints wit blur: 620\n",
+      "Total Keypoints wit blur: 213\n",
+      "Total Keypoints wit blur: 627\n",
+      "Total Keypoints wit blur: 630\n",
+      "Total Keypoints wit blur: 425\n",
+      "Total Keypoints wit blur: 71\n",
+      "Total Keypoints wit blur: 508\n",
+      "Total Keypoints wit blur: 453\n",
+      "Total Keypoints wit blur: 749\n",
+      "Total Keypoints wit blur: 965\n",
+      "Total Keypoints wit blur: 396\n",
+      "Total Keypoints wit blur: 550\n",
+      "Total Keypoints wit blur: 68\n",
+      "Total Keypoints wit blur: 326\n",
+      "Total Keypoints wit blur: 349\n",
+      "Total Keypoints wit blur: 448\n",
+      "Total Keypoints wit blur: 329\n",
+      "Total Keypoints wit blur: 324\n",
+      "Total Keypoints wit blur: 559\n",
+      "Total Keypoints wit blur: 136\n",
+      "Total Keypoints wit blur: 673\n",
+      "Total Keypoints wit blur: 481\n",
+      "Total Keypoints wit blur: 1151\n",
+      "Total Keypoints wit blur: 788\n",
+      "Total Keypoints wit blur: 444\n",
+      "Total Keypoints wit blur: 982\n",
+      "Total Keypoints wit blur: 170\n",
+      "Total Keypoints wit blur: 538\n",
+      "Total Keypoints wit blur: 310\n",
+      "Total Keypoints wit blur: 150\n",
+      "Total Keypoints wit blur: 908\n",
+      "Total Keypoints wit blur: 395\n",
+      "Total Keypoints wit blur: 426\n",
+      "Total Keypoints wit blur: 497\n",
+      "Total Keypoints wit blur: 251\n",
+      "Total Keypoints wit blur: 869\n",
+      "Total Keypoints wit blur: 249\n",
+      "Total Keypoints wit blur: 342\n",
+      "Total Keypoints wit blur: 523\n",
+      "Total Keypoints wit blur: 1380\n",
+      "Total Keypoints wit blur: 754\n",
+      "Total Keypoints wit blur: 403\n",
+      "Total Keypoints wit blur: 686\n",
+      "Total Keypoints wit blur: 518\n",
+      "Total Keypoints wit blur: 1403\n",
+      "Total Keypoints wit blur: 887\n",
+      "Total Keypoints wit blur: 319\n",
+      "Total Keypoints wit blur: 730\n",
+      "Total Keypoints wit blur: 1209\n",
+      "Total Keypoints wit blur: 548\n",
+      "Total Keypoints wit blur: 435\n",
+      "Total Keypoints wit blur: 400\n",
+      "Total Keypoints wit blur: 1103\n",
+      "Total Keypoints wit blur: 495\n",
+      "Total Keypoints wit blur: 364\n",
+      "Total Keypoints wit blur: 1105\n",
+      "Total Keypoints wit blur: 279\n",
+      "Total Keypoints wit blur: 190\n",
+      "Total Keypoints wit blur: 329\n",
+      "Total Keypoints wit blur: 1395\n",
+      "Total Keypoints wit blur: 691\n",
+      "Total Keypoints wit blur: 157\n",
+      "Total Keypoints wit blur: 572\n",
+      "Total Keypoints wit blur: 793\n",
+      "Total Keypoints wit blur: 301\n",
+      "Total Keypoints wit blur: 688\n",
+      "Total Keypoints wit blur: 896\n",
+      "Total Keypoints wit blur: 112\n",
+      "Total Keypoints wit blur: 589\n",
+      "Total Keypoints wit blur: 545\n",
+      "Total Keypoints wit blur: 453\n",
+      "Total Keypoints wit blur: 408\n",
+      "Total Keypoints wit blur: 447\n",
+      "Total Keypoints wit blur: 380\n",
+      "Total Keypoints wit blur: 278\n",
+      "Total Keypoints wit blur: 698\n",
+      "Total Keypoints wit blur: 157\n",
+      "Total Keypoints wit blur: 684\n",
+      "Total Keypoints wit blur: 381\n",
+      "Total Keypoints wit blur: 1195\n",
+      "Total Keypoints wit blur: 893\n",
+      "Total Keypoints wit blur: 496\n",
+      "Total Keypoints wit blur: 186\n",
+      "Total Keypoints wit blur: 958\n",
+      "Total Keypoints wit blur: 196\n",
+      "Total Keypoints wit blur: 407\n",
+      "Total Keypoints wit blur: 773\n",
+      "Total Keypoints wit blur: 709\n",
+      "Total Keypoints wit blur: 205\n",
+      "Total Keypoints wit blur: 447\n",
+      "Total Keypoints wit blur: 338\n",
+      "Total Keypoints wit blur: 634\n",
+      "Total Keypoints wit blur: 435\n",
+      "Total Keypoints wit blur: 817\n",
+      "Total Keypoints wit blur: 399\n",
+      "Total Keypoints wit blur: 778\n",
+      "Total Keypoints wit blur: 212\n",
+      "Total Keypoints wit blur: 858\n",
+      "Total Keypoints wit blur: 640\n",
+      "Total Keypoints wit blur: 606\n",
+      "Total Keypoints wit blur: 555\n",
+      "Total Keypoints wit blur: 215\n",
+      "Total Keypoints wit blur: 387\n",
+      "Total Keypoints wit blur: 816\n",
+      "Total Keypoints wit blur: 1116\n",
+      "Total Keypoints wit blur: 343\n",
+      "Total Keypoints wit blur: 613\n",
+      "Total Keypoints wit blur: 380\n",
+      "Total Keypoints wit blur: 917\n",
+      "Total Keypoints wit blur: 150\n",
+      "Total Keypoints wit blur: 614\n",
+      "Total Keypoints wit blur: 491\n",
+      "Total Keypoints wit blur: 706\n",
+      "Total Keypoints wit blur: 550\n",
+      "Total Keypoints wit blur: 584\n",
+      "Total Keypoints wit blur: 433\n",
+      "Total Keypoints wit blur: 619\n",
+      "Total Keypoints wit blur: 806\n",
+      "Total Keypoints wit blur: 442\n",
+      "Total Keypoints wit blur: 1695\n",
+      "Total Keypoints wit blur: 540\n",
+      "Total Keypoints wit blur: 846\n",
+      "Total Keypoints wit blur: 679\n",
+      "Total Keypoints wit blur: 391\n",
+      "Total Keypoints wit blur: 552\n",
+      "Total Keypoints wit blur: 335\n",
+      "Total Keypoints wit blur: 285\n",
+      "Total Keypoints wit blur: 731\n",
+      "Total Keypoints wit blur: 746\n",
+      "Total Keypoints wit blur: 792\n",
+      "Total Keypoints wit blur: 198\n",
+      "Total Keypoints wit blur: 783\n",
+      "Total Keypoints wit blur: 526\n",
+      "Total Keypoints wit blur: 756\n",
+      "Total Keypoints wit blur: 295\n",
+      "Total Keypoints wit blur: 444\n",
+      "Total Keypoints wit blur: 542\n",
+      "Total Keypoints wit blur: 389\n",
+      "Total Keypoints wit blur: 328\n",
+      "Total Keypoints wit blur: 681\n",
+      "Total Keypoints wit blur: 656\n",
+      "Total Keypoints wit blur: 456\n",
+      "Total Keypoints wit blur: 318\n",
+      "Total Keypoints wit blur: 1012\n",
+      "Total Keypoints wit blur: 262\n",
+      "Total Keypoints wit blur: 636\n",
+      "Total Keypoints wit blur: 1331\n",
+      "Total Keypoints wit blur: 190\n",
+      "Total Keypoints wit blur: 350\n",
+      "Total Keypoints wit blur: 334\n",
+      "Total Keypoints wit blur: 514\n",
+      "Total Keypoints wit blur: 350\n",
+      "Total Keypoints wit blur: 204\n",
+      "Total Keypoints wit blur: 208\n",
+      "Total Keypoints wit blur: 280\n",
+      "Total Keypoints wit blur: 1054\n",
+      "Total Keypoints wit blur: 406\n",
+      "Total Keypoints wit blur: 602\n",
+      "Total Keypoints wit blur: 480\n",
+      "Total Keypoints wit blur: 267\n",
+      "Total Keypoints wit blur: 755\n",
+      "Total Keypoints wit blur: 1517\n",
+      "Total Keypoints wit blur: 371\n",
+      "Total Keypoints wit blur: 443\n",
+      "Total Keypoints wit blur: 400\n",
+      "Total Keypoints wit blur: 608\n",
+      "Total Keypoints wit blur: 307\n",
+      "Total Keypoints wit blur: 589\n",
+      "Total Keypoints wit blur: 626\n",
+      "Total Keypoints wit blur: 866\n",
+      "Total Keypoints wit blur: 1063\n",
+      "Total Keypoints wit blur: 76\n",
+      "Total Keypoints wit blur: 753\n",
+      "Total Keypoints wit blur: 670\n",
+      "Total Keypoints wit blur: 239\n",
+      "Total Keypoints wit blur: 533\n",
+      "Total Keypoints wit blur: 751\n",
+      "Total Keypoints wit blur: 1068\n",
+      "Total Keypoints wit blur: 186\n",
+      "Total Keypoints wit blur: 255\n",
+      "Total Keypoints wit blur: 898\n",
+      "Total Keypoints wit blur: 535\n",
+      "Total Keypoints wit blur: 439\n",
+      "Total Keypoints wit blur: 149\n",
+      "Total Keypoints wit blur: 266\n",
+      "Total Keypoints wit blur: 432\n",
+      "Total Keypoints wit blur: 850\n",
+      "Total Keypoints wit blur: 952\n",
+      "Total Keypoints wit blur: 754\n",
+      "Total Keypoints wit blur: 744\n",
+      "Total Keypoints wit blur: 592\n",
+      "Total Keypoints wit blur: 927\n",
+      "Total Keypoints wit blur: 497\n",
+      "Total Keypoints wit blur: 582\n",
+      "Total Keypoints wit blur: 157\n",
+      "Total Keypoints wit blur: 190\n",
+      "Total Keypoints wit blur: 185\n",
+      "Total Keypoints wit blur: 1565\n",
+      "Total Keypoints wit blur: 247\n",
+      "Total Keypoints wit blur: 454\n",
+      "Total Keypoints wit blur: 761\n",
+      "Total Keypoints wit blur: 633\n",
+      "Total Keypoints wit blur: 681\n",
+      "Total Keypoints wit blur: 903\n",
+      "Total Keypoints wit blur: 1173\n",
+      "Total Keypoints wit blur: 505\n",
+      "Total Keypoints wit blur: 511\n",
+      "Total Keypoints wit blur: 153\n",
+      "Total Keypoints wit blur: 204\n",
+      "Total Keypoints wit blur: 131\n",
+      "Total Keypoints wit blur: 777\n",
+      "Total Keypoints wit blur: 805\n",
+      "Total Keypoints wit blur: 731\n",
+      "Total Keypoints wit blur: 890\n",
+      "Total Keypoints wit blur: 1346\n",
+      "Total Keypoints wit blur: 989\n",
+      "Total Keypoints wit blur: 210\n",
+      "Total Keypoints wit blur: 320\n",
+      "Total Keypoints wit blur: 713\n",
+      "Total Keypoints wit blur: 431\n",
+      "Total Keypoints wit blur: 575\n",
+      "Total Keypoints wit blur: 573\n",
+      "Total Keypoints wit blur: 311\n",
+      "Total Keypoints wit blur: 625\n",
+      "Total Keypoints wit blur: 412\n",
+      "Total Keypoints wit blur: 917\n",
+      "Total Keypoints wit blur: 514\n",
+      "Total Keypoints wit blur: 452\n",
+      "Total Keypoints wit blur: 701\n",
+      "Total Keypoints wit blur: 534\n",
+      "Total Keypoints wit blur: 603\n",
+      "Total Keypoints wit blur: 1238\n",
+      "Total Keypoints wit blur: 1028\n",
+      "Total Keypoints wit blur: 770\n",
+      "Total Keypoints wit blur: 786\n",
+      "Total Keypoints wit blur: 873\n",
+      "Total Keypoints wit blur: 483\n",
+      "Total Keypoints wit blur: 285\n",
+      "Total Keypoints wit blur: 386\n",
+      "Total Keypoints wit blur: 235\n",
+      "Total Keypoints wit blur: 340\n",
+      "Total Keypoints wit blur: 713\n",
+      "Total Keypoints wit blur: 837\n",
+      "Total Keypoints wit blur: 357\n",
+      "Total Keypoints wit blur: 1019\n",
+      "Total Keypoints wit blur: 570\n",
+      "Total Keypoints wit blur: 149\n",
+      "Total Keypoints wit blur: 787\n",
+      "Total Keypoints wit blur: 295\n",
+      "Total Keypoints wit blur: 572\n",
+      "Total Keypoints wit blur: 977\n",
+      "Total Keypoints wit blur: 445\n",
+      "Total Keypoints wit blur: 712\n",
+      "Total Keypoints wit blur: 570\n",
+      "Total Keypoints wit blur: 680\n",
+      "Total Keypoints wit blur: 681\n",
+      "Total Keypoints wit blur: 146\n",
+      "Total Keypoints wit blur: 361\n",
+      "Total Keypoints wit blur: 603\n",
+      "Total Keypoints wit blur: 839\n",
+      "Total Keypoints wit blur: 558\n",
+      "Total Keypoints wit blur: 83\n",
+      "Total Keypoints wit blur: 666\n",
+      "Total Keypoints wit blur: 811\n",
+      "Total Keypoints wit blur: 786\n",
+      "Total Keypoints wit blur: 565\n",
+      "Total Keypoints wit blur: 511\n",
+      "Total Keypoints wit blur: 235\n",
+      "Total Keypoints wit blur: 310\n",
+      "Total Keypoints wit blur: 695\n",
+      "Total Keypoints wit blur: 248\n",
+      "Total Keypoints wit blur: 298\n",
+      "Total Keypoints wit blur: 448\n",
+      "Total Keypoints wit blur: 297\n",
+      "Total Keypoints wit blur: 581\n",
+      "Total Keypoints wit blur: 328\n",
+      "Total Keypoints wit blur: 431\n",
+      "Total Keypoints wit blur: 518\n",
+      "Total Keypoints wit blur: 551\n",
+      "Total Keypoints wit blur: 375\n",
+      "Total Keypoints wit blur: 533\n",
+      "Total Keypoints wit blur: 1179\n",
+      "Total Keypoints wit blur: 666\n",
+      "Total Keypoints wit blur: 728\n",
+      "Total Keypoints wit blur: 1077\n",
+      "Total Keypoints wit blur: 1345\n",
+      "Total Keypoints wit blur: 602\n",
+      "Total Keypoints wit blur: 428\n",
+      "Total Keypoints wit blur: 740\n",
+      "Total Keypoints wit blur: 598\n",
+      "Total Keypoints wit blur: 896\n",
+      "Total Keypoints wit blur: 707\n",
+      "Total Keypoints wit blur: 532\n",
+      "Total Keypoints wit blur: 498\n",
+      "Total Keypoints wit blur: 445\n",
+      "Total Keypoints wit blur: 441\n",
+      "Total Keypoints wit blur: 341\n",
+      "Total Keypoints wit blur: 655\n",
+      "Total Keypoints wit blur: 342\n",
+      "Total Keypoints wit blur: 401\n",
+      "Total Keypoints wit blur: 721\n",
+      "Total Keypoints wit blur: 737\n",
+      "Total Keypoints wit blur: 680\n",
+      "Total Keypoints wit blur: 1328\n",
+      "Total Keypoints wit blur: 203\n",
+      "Total Keypoints wit blur: 797\n",
+      "Total Keypoints wit blur: 615\n",
+      "Total Keypoints wit blur: 1046\n",
+      "Total Keypoints wit blur: 423\n",
+      "Total Keypoints wit blur: 635\n",
+      "Total Keypoints wit blur: 314\n",
+      "Total Keypoints wit blur: 821\n",
+      "Total Keypoints wit blur: 455\n",
+      "Total Keypoints wit blur: 309\n",
+      "Total Keypoints wit blur: 707\n",
+      "Total Keypoints wit blur: 448\n",
+      "Total Keypoints wit blur: 894\n",
+      "Total Keypoints wit blur: 630\n",
+      "Total Keypoints wit blur: 360\n",
+      "Total Keypoints wit blur: 199\n",
+      "Total Keypoints wit blur: 458\n",
+      "Total Keypoints wit blur: 197\n",
+      "Total Keypoints wit blur: 843\n",
+      "Total Keypoints wit blur: 173\n",
+      "Total Keypoints wit blur: 380\n",
+      "Total Keypoints wit blur: 1413\n",
+      "Total Keypoints wit blur: 749\n",
+      "Total Keypoints wit blur: 1503\n",
+      "Total Keypoints wit blur: 604\n",
+      "Total Keypoints wit blur: 678\n",
+      "Total Keypoints wit blur: 1218\n",
+      "Total Keypoints wit blur: 946\n",
+      "Total Keypoints wit blur: 623\n",
+      "Total Keypoints wit blur: 678\n",
+      "Total Keypoints wit blur: 545\n",
+      "Total Keypoints wit blur: 737\n",
+      "Total Keypoints wit blur: 565\n",
+      "Total Keypoints wit blur: 697\n",
+      "Total Keypoints wit blur: 277\n",
+      "Total Keypoints wit blur: 163\n",
+      "Total Keypoints wit blur: 397\n",
+      "Total Keypoints wit blur: 619\n",
+      "Total Keypoints wit blur: 775\n",
+      "Total Keypoints wit blur: 849\n",
+      "Total Keypoints wit blur: 798\n",
+      "Total Keypoints wit blur: 363\n",
+      "Total Keypoints wit blur: 891\n",
+      "Total Keypoints wit blur: 366\n",
+      "Total Keypoints wit blur: 560\n",
+      "Total Keypoints wit blur: 585\n",
+      "Total Keypoints wit blur: 911\n",
+      "Total Keypoints wit blur: 413\n",
+      "Total Keypoints wit blur: 362\n",
+      "Total Keypoints wit blur: 493\n",
+      "Total Keypoints wit blur: 243\n",
+      "Total Keypoints wit blur: 356\n",
+      "Total Keypoints wit blur: 847\n",
+      "Total Keypoints wit blur: 79\n",
+      "Total Keypoints wit blur: 945\n",
+      "Total Keypoints wit blur: 111\n",
+      "Total Keypoints wit blur: 182\n",
+      "Total Keypoints wit blur: 674\n",
+      "Total Keypoints wit blur: 668\n",
+      "Total Keypoints wit blur: 172\n",
+      "Total Keypoints wit blur: 560\n",
+      "Total Keypoints wit blur: 486\n",
+      "Total Keypoints wit blur: 206\n",
+      "Total Keypoints wit blur: 329\n",
+      "Total Keypoints wit blur: 144\n",
+      "Total Keypoints wit blur: 1127\n",
+      "Total Keypoints wit blur: 237\n",
+      "Total Keypoints wit blur: 326\n",
+      "Total Keypoints wit blur: 1752\n",
+      "Total Keypoints wit blur: 1189\n",
+      "Total Keypoints wit blur: 1041\n",
+      "Total Keypoints wit blur: 1558\n",
+      "Total Keypoints wit blur: 1011\n",
+      "Total Keypoints wit blur: 525\n",
+      "Total Keypoints wit blur: 551\n",
+      "Total Keypoints wit blur: 1015\n",
+      "Total Keypoints wit blur: 467\n",
+      "Total Keypoints wit blur: 494\n",
+      "Total Keypoints wit blur: 536\n",
+      "Total Keypoints wit blur: 380\n",
+      "Total Keypoints wit blur: 1688\n",
+      "Total Keypoints wit blur: 380\n",
+      "Total Keypoints wit blur: 492\n",
+      "Total Keypoints wit blur: 425\n",
+      "Total Keypoints wit blur: 548\n",
+      "Total Keypoints wit blur: 677\n",
+      "Total Keypoints wit blur: 1017\n",
+      "Total Keypoints wit blur: 1134\n",
+      "Total Keypoints wit blur: 496\n",
+      "Total Keypoints wit blur: 1015\n",
+      "Total Keypoints wit blur: 847\n",
+      "Total Keypoints wit blur: 657\n",
+      "Total Keypoints wit blur: 983\n",
+      "Total Keypoints wit blur: 632\n",
+      "Total Keypoints wit blur: 694\n",
+      "Total Keypoints wit blur: 486\n",
+      "Total Keypoints wit blur: 755\n",
+      "Total Keypoints wit blur: 279\n",
+      "Total Keypoints wit blur: 199\n",
+      "Total Keypoints wit blur: 544\n",
+      "Total Keypoints wit blur: 309\n",
+      "Total Keypoints wit blur: 173\n",
+      "Total Keypoints wit blur: 998\n",
+      "Total Keypoints wit blur: 445\n",
+      "Total Keypoints wit blur: 264\n",
+      "Total Keypoints wit blur: 435\n",
+      "Total Keypoints wit blur: 395\n",
+      "Total Keypoints wit blur: 556\n",
+      "Total Keypoints wit blur: 115\n",
+      "Total Keypoints wit blur: 306\n",
+      "Total Keypoints wit blur: 258\n",
+      "Total Keypoints wit blur: 860\n",
+      "Total Keypoints wit blur: 129\n",
+      "Total Keypoints wit blur: 202\n",
+      "Total Keypoints wit blur: 526\n",
+      "Total Keypoints wit blur: 623\n",
+      "Total Keypoints wit blur: 340\n",
+      "Total Keypoints wit blur: 856\n",
+      "Total Keypoints wit blur: 619\n",
+      "Total Keypoints wit blur: 62\n",
+      "Total Keypoints wit blur: 536\n",
+      "Total Keypoints wit blur: 477\n",
+      "Total Keypoints wit blur: 949\n",
+      "Total Keypoints wit blur: 983\n",
+      "Total Keypoints wit blur: 1007\n",
+      "Total Keypoints wit blur: 770\n",
+      "Total Keypoints wit blur: 300\n",
+      "Total Keypoints wit blur: 451\n",
+      "Total Keypoints wit blur: 1184\n",
+      "Total Keypoints wit blur: 268\n",
+      "Total Keypoints wit blur: 734\n",
+      "Total Keypoints wit blur: 335\n",
+      "Total Keypoints wit blur: 874\n",
+      "Total Keypoints wit blur: 256\n",
+      "Total Keypoints wit blur: 501\n",
+      "Total Keypoints wit blur: 764\n",
+      "Total Keypoints wit blur: 171\n",
+      "Total Keypoints wit blur: 363\n",
+      "Total Keypoints wit blur: 164\n",
+      "Total Keypoints wit blur: 127\n",
+      "Total Keypoints wit blur: 667\n",
+      "Total Keypoints wit blur: 422\n",
+      "Total Keypoints wit blur: 588\n",
+      "Total Keypoints wit blur: 454\n",
+      "Total Keypoints wit blur: 642\n",
+      "Total Keypoints wit blur: 552\n",
+      "Total Keypoints wit blur: 227\n",
+      "Total Keypoints wit blur: 236\n",
+      "Total Keypoints wit blur: 494\n",
+      "Total Keypoints wit blur: 579\n",
+      "Total Keypoints wit blur: 592\n",
+      "Total Keypoints wit blur: 1111\n",
+      "Total Keypoints wit blur: 632\n",
+      "Total Keypoints wit blur: 728\n",
+      "Total Keypoints wit blur: 890\n",
+      "Total Keypoints wit blur: 156\n",
+      "Total Keypoints wit blur: 567\n",
+      "Total Keypoints wit blur: 954\n",
+      "Total Keypoints wit blur: 623\n",
+      "Total Keypoints wit blur: 626\n",
+      "Total Keypoints wit blur: 462\n",
+      "Total Keypoints wit blur: 1339\n",
+      "Total Keypoints wit blur: 1421\n",
+      "Total Keypoints wit blur: 318\n",
+      "Total Keypoints wit blur: 405\n",
+      "Total Keypoints wit blur: 668\n",
+      "Total Keypoints wit blur: 545\n",
+      "Total Keypoints wit blur: 569\n",
+      "Total Keypoints wit blur: 642\n",
+      "Total Keypoints wit blur: 845\n",
+      "Total Keypoints wit blur: 493\n",
+      "Total Keypoints wit blur: 42\n",
+      "Total Keypoints wit blur: 1025\n",
+      "Total Keypoints wit blur: 890\n",
+      "Total Keypoints wit blur: 191\n",
+      "Total Keypoints wit blur: 1214\n",
+      "Total Keypoints wit blur: 509\n",
+      "Total Keypoints wit blur: 773\n",
+      "Total Keypoints wit blur: 686\n",
+      "Total Keypoints wit blur: 550\n",
+      "Total Keypoints wit blur: 540\n",
+      "Total Keypoints wit blur: 719\n",
+      "Total Keypoints wit blur: 405\n",
+      "Total Keypoints wit blur: 761\n",
+      "Total Keypoints wit blur: 782\n",
+      "Total Keypoints wit blur: 209\n",
+      "Total Keypoints wit blur: 940\n",
+      "Total Keypoints wit blur: 427\n",
+      "Total Keypoints wit blur: 470\n",
+      "Total Keypoints wit blur: 435\n",
+      "Total Keypoints wit blur: 998\n",
+      "Total Keypoints wit blur: 759\n",
+      "Total Keypoints wit blur: 1006\n",
+      "Total Keypoints wit blur: 703\n",
+      "Total Keypoints wit blur: 1104\n",
+      "Total Keypoints wit blur: 186\n",
+      "Total Keypoints wit blur: 373\n",
+      "Total Keypoints wit blur: 466\n",
+      "Total Keypoints wit blur: 479\n",
+      "Total Keypoints wit blur: 896\n",
+      "Total Keypoints wit blur: 1719\n",
+      "Total Keypoints wit blur: 1009\n",
+      "Total Keypoints wit blur: 1083\n",
+      "Total Keypoints wit blur: 1270\n",
+      "Total Keypoints wit blur: 419\n",
+      "Total Keypoints wit blur: 584\n",
+      "Total Keypoints wit blur: 689\n",
+      "Total Keypoints wit blur: 908\n",
+      "Total Keypoints wit blur: 408\n",
+      "Total Keypoints wit blur: 662\n",
+      "Total Keypoints wit blur: 577\n",
+      "Total Keypoints wit blur: 507\n",
+      "Total Keypoints wit blur: 454\n",
+      "Total Keypoints wit blur: 479\n",
+      "Total Keypoints wit blur: 422\n",
+      "Total Keypoints wit blur: 869\n",
+      "Total Keypoints wit blur: 143\n",
+      "Total Keypoints wit blur: 672\n",
+      "Total Keypoints wit blur: 369\n",
+      "Total Keypoints wit blur: 437\n",
+      "Total Keypoints wit blur: 683\n",
+      "Total Keypoints wit blur: 611\n",
+      "Total Keypoints wit blur: 518\n",
+      "Total Keypoints wit blur: 1181\n",
+      "Total Keypoints wit blur: 704\n",
+      "Total Keypoints wit blur: 642\n",
+      "Total Keypoints wit blur: 491\n",
+      "Total Keypoints wit blur: 781\n",
+      "Total Keypoints wit blur: 432\n",
+      "Total Keypoints wit blur: 400\n",
+      "Total Keypoints wit blur: 313\n",
+      "Total Keypoints wit blur: 810\n",
+      "Total Keypoints wit blur: 163\n",
+      "Total Keypoints wit blur: 394\n",
+      "Total Keypoints wit blur: 1047\n",
+      "Total Keypoints wit blur: 504\n",
+      "Total Keypoints wit blur: 818\n",
+      "Total Keypoints wit blur: 424\n",
+      "Total Keypoints wit blur: 643\n",
+      "Total Keypoints wit blur: 168\n",
+      "Total Keypoints wit blur: 397\n",
+      "Total Keypoints wit blur: 868\n",
+      "Total Keypoints wit blur: 1198\n",
+      "Total Keypoints wit blur: 1144\n",
+      "Total Keypoints wit blur: 382\n",
+      "Total Keypoints wit blur: 1024\n",
+      "Total Keypoints wit blur: 921\n",
+      "Total Keypoints wit blur: 715\n",
+      "Total Keypoints wit blur: 591\n",
+      "Total Keypoints wit blur: 700\n",
+      "Total Keypoints wit blur: 283\n",
+      "Total Keypoints wit blur: 1113\n",
+      "Total Keypoints wit blur: 165\n",
+      "Total Keypoints wit blur: 676\n",
+      "Total Keypoints wit blur: 375\n",
+      "Total Keypoints wit blur: 620\n",
+      "Total Keypoints wit blur: 732\n",
+      "Total Keypoints wit blur: 609\n",
+      "Total Keypoints wit blur: 444\n",
+      "Total Keypoints wit blur: 164\n",
+      "Total Keypoints wit blur: 1408\n",
+      "Total Keypoints wit blur: 505\n",
+      "Total Keypoints wit blur: 334\n",
+      "Total Keypoints wit blur: 300\n",
+      "Total Keypoints wit blur: 1003\n",
+      "Total Keypoints wit blur: 396\n",
+      "Total Keypoints wit blur: 671\n",
+      "Total Keypoints wit blur: 763\n",
+      "Total Keypoints wit blur: 550\n",
+      "Total Keypoints wit blur: 479\n",
+      "Total Keypoints wit blur: 748\n",
+      "Total Keypoints wit blur: 1045\n",
+      "Total Keypoints wit blur: 975\n",
+      "Total Keypoints wit blur: 705\n",
+      "Total Keypoints wit blur: 398\n",
+      "Total Keypoints wit blur: 470\n",
+      "Total Keypoints wit blur: 671\n",
+      "Total Keypoints wit blur: 487\n",
+      "Total Keypoints wit blur: 260\n",
+      "Total Keypoints wit blur: 318\n",
+      "Total Keypoints wit blur: 311\n",
+      "Total Keypoints wit blur: 282\n",
+      "Total Keypoints wit blur: 1044\n",
+      "Total Keypoints wit blur: 495\n",
+      "Total Keypoints wit blur: 1324\n",
+      "Total Keypoints wit blur: 412\n",
+      "Total Keypoints wit blur: 988\n",
+      "Total Keypoints wit blur: 436\n",
+      "Total Keypoints wit blur: 374\n",
+      "Total Keypoints wit blur: 1019\n",
+      "Total Keypoints wit blur: 400\n",
+      "Total Keypoints wit blur: 115\n",
+      "Total Keypoints wit blur: 570\n",
+      "Total Keypoints wit blur: 537\n",
+      "Total Keypoints wit blur: 473\n",
+      "Total Keypoints wit blur: 314\n",
+      "Total Keypoints wit blur: 592\n",
+      "Total Keypoints wit blur: 863\n",
+      "Total Keypoints wit blur: 458\n",
+      "Total Keypoints wit blur: 959\n",
+      "Total Keypoints wit blur: 436\n",
+      "Total Keypoints wit blur: 107\n",
+      "Total Keypoints wit blur: 897\n",
+      "Total Keypoints wit blur: 568\n",
+      "Total Keypoints wit blur: 390\n",
+      "Total Keypoints wit blur: 168\n",
+      "Total Keypoints wit blur: 446\n",
+      "Total Keypoints wit blur: 1011\n",
+      "Total Keypoints wit blur: 311\n",
+      "Total Keypoints wit blur: 1529\n",
+      "Total Keypoints wit blur: 1087\n",
+      "Total Keypoints wit blur: 239\n",
+      "Total Keypoints wit blur: 765\n",
+      "Total Keypoints wit blur: 318\n",
+      "Total Keypoints wit blur: 702\n",
+      "Total Keypoints wit blur: 815\n",
+      "Total Keypoints wit blur: 741\n",
+      "Total Keypoints wit blur: 611\n",
+      "Total Keypoints wit blur: 353\n",
+      "Total Keypoints wit blur: 127\n",
+      "Total Keypoints wit blur: 1128\n",
+      "Total Keypoints wit blur: 300\n",
+      "Total Keypoints wit blur: 574\n",
+      "Total Keypoints wit blur: 499\n",
+      "Total Keypoints wit blur: 783\n",
+      "Total Keypoints wit blur: 356\n",
+      "Total Keypoints wit blur: 826\n",
+      "Total Keypoints wit blur: 163\n",
+      "Total Keypoints wit blur: 145\n",
+      "Total Keypoints wit blur: 518\n",
+      "Total Keypoints wit blur: 263\n",
+      "Total Keypoints wit blur: 310\n",
+      "Total Keypoints wit blur: 609\n",
+      "Total Keypoints wit blur: 144\n",
+      "Total Keypoints wit blur: 503\n",
+      "Total Keypoints wit blur: 529\n",
+      "Total Keypoints wit blur: 724\n",
+      "Total Keypoints wit blur: 350\n",
+      "Total Keypoints wit blur: 169\n",
+      "Total Keypoints wit blur: 1053\n",
+      "Total Keypoints wit blur: 333\n",
+      "Total Keypoints wit blur: 581\n",
+      "Total Keypoints wit blur: 268\n",
+      "Total Keypoints wit blur: 903\n",
+      "Total Keypoints wit blur: 707\n",
+      "Total Keypoints wit blur: 924\n",
+      "Total Keypoints wit blur: 1901\n",
+      "Total Keypoints wit blur: 297\n",
+      "Total Keypoints wit blur: 157\n",
+      "Total Keypoints wit blur: 122\n",
+      "Total Keypoints wit blur: 358\n",
+      "Total Keypoints wit blur: 824\n",
+      "Total Keypoints wit blur: 762\n",
+      "Total Keypoints wit blur: 466\n",
+      "Total Keypoints wit blur: 142\n",
+      "Total Keypoints wit blur: 195\n",
+      "Total Keypoints wit blur: 461\n",
+      "Total Keypoints wit blur: 446\n",
+      "Total Keypoints wit blur: 305\n",
+      "Total Keypoints wit blur: 605\n",
+      "Total Keypoints wit blur: 601\n",
+      "Total Keypoints wit blur: 1216\n",
+      "Total Keypoints wit blur: 177\n",
+      "Total Keypoints wit blur: 550\n",
+      "Total Keypoints wit blur: 1520\n",
+      "Total Keypoints wit blur: 1063\n",
+      "Total Keypoints wit blur: 593\n",
+      "Total Keypoints wit blur: 457\n",
+      "Total Keypoints wit blur: 812\n",
+      "Total Keypoints wit blur: 936\n",
+      "Total Keypoints wit blur: 517\n",
+      "Total Keypoints wit blur: 332\n",
+      "Total Keypoints wit blur: 796\n",
+      "Total Keypoints wit blur: 517\n",
+      "Total Keypoints wit blur: 747\n",
+      "Total Keypoints wit blur: 162\n",
+      "Total Keypoints wit blur: 813\n",
+      "Total Keypoints wit blur: 646\n",
+      "Total Keypoints wit blur: 405\n",
+      "Total Keypoints wit blur: 1016\n",
+      "Total Keypoints wit blur: 329\n",
+      "Total Keypoints wit blur: 287\n",
+      "Total Keypoints wit blur: 522\n",
+      "Total Keypoints wit blur: 546\n",
+      "Total Keypoints wit blur: 1583\n",
+      "Total Keypoints wit blur: 952\n",
+      "Total Keypoints wit blur: 494\n",
+      "Total Keypoints wit blur: 697\n",
+      "Total Keypoints wit blur: 511\n",
+      "Total Keypoints wit blur: 907\n",
+      "Total Keypoints wit blur: 355\n",
+      "Total Keypoints wit blur: 620\n",
+      "Total Keypoints wit blur: 747\n",
+      "Total Keypoints wit blur: 676\n",
+      "Total Keypoints wit blur: 518\n",
+      "Total Keypoints wit blur: 402\n",
+      "Total Keypoints wit blur: 1376\n",
+      "Total Keypoints wit blur: 531\n",
+      "Total Keypoints wit blur: 664\n",
+      "Total Keypoints wit blur: 328\n",
+      "Total Keypoints wit blur: 924\n",
+      "Total Keypoints wit blur: 859\n",
+      "Total Keypoints wit blur: 367\n",
+      "Total Keypoints wit blur: 111\n",
+      "Total Keypoints wit blur: 646\n",
+      "Total Keypoints wit blur: 1277\n",
+      "Total Keypoints wit blur: 312\n",
+      "Total Keypoints wit blur: 189\n",
+      "Total Keypoints wit blur: 393\n",
+      "Total Keypoints wit blur: 151\n",
+      "Total Keypoints wit blur: 463\n",
+      "Total Keypoints wit blur: 1182\n",
+      "Total Keypoints wit blur: 724\n",
+      "Total Keypoints wit blur: 255\n",
+      "Total Keypoints wit blur: 906\n",
+      "Total Keypoints wit blur: 260\n",
+      "Total Keypoints wit blur: 519\n",
+      "Total Keypoints wit blur: 1126\n",
+      "Total Keypoints wit blur: 573\n",
+      "Total Keypoints wit blur: 159\n",
+      "Total Keypoints wit blur: 1296\n",
+      "Total Keypoints wit blur: 756\n",
+      "Total Keypoints wit blur: 154\n",
+      "Total Keypoints wit blur: 293\n",
+      "Total Keypoints wit blur: 485\n",
+      "Total Keypoints wit blur: 841\n",
+      "Total Keypoints wit blur: 1067\n",
+      "Total Keypoints wit blur: 382\n",
+      "Total Keypoints wit blur: 125\n",
+      "Total Keypoints wit blur: 232\n",
+      "Total Keypoints wit blur: 1173\n",
+      "Total Keypoints wit blur: 1219\n",
+      "Total Keypoints wit blur: 597\n",
+      "Total Keypoints wit blur: 751\n",
+      "Total Keypoints wit blur: 839\n",
+      "Total Keypoints wit blur: 521\n",
+      "Total Keypoints wit blur: 1133\n",
+      "Total Keypoints wit blur: 687\n",
+      "Total Keypoints wit blur: 429\n",
+      "Total Keypoints wit blur: 321\n",
+      "Total Keypoints wit blur: 341\n",
+      "Total Keypoints wit blur: 190\n",
+      "Total Keypoints wit blur: 206\n",
+      "Total Keypoints wit blur: 457\n",
+      "Total Keypoints wit blur: 267\n",
+      "Total Keypoints wit blur: 636\n",
+      "Total Keypoints wit blur: 756\n",
+      "Total Keypoints wit blur: 1070\n",
+      "Total Keypoints wit blur: 554\n",
+      "Total Keypoints wit blur: 727\n",
+      "Total Keypoints wit blur: 498\n",
+      "Total Keypoints wit blur: 611\n",
+      "Total Keypoints wit blur: 744\n",
+      "Total Keypoints wit blur: 845\n",
+      "Total Keypoints wit blur: 228\n",
+      "Total Keypoints wit blur: 552\n",
+      "Total Keypoints wit blur: 935\n",
+      "Total Keypoints wit blur: 379\n",
+      "Total Keypoints wit blur: 209\n",
+      "Total Keypoints wit blur: 580\n",
+      "Total Keypoints wit blur: 715\n",
+      "Total Keypoints wit blur: 116\n",
+      "Total Keypoints wit blur: 627\n",
+      "Total Keypoints wit blur: 862\n",
+      "Total Keypoints wit blur: 509\n",
+      "Total Keypoints wit blur: 428\n",
+      "Total Keypoints wit blur: 1260\n",
+      "Total Keypoints wit blur: 160\n",
+      "Total Keypoints wit blur: 283\n",
+      "Total Keypoints wit blur: 1035\n",
+      "Total Keypoints wit blur: 398\n",
+      "Total Keypoints wit blur: 587\n",
+      "Total Keypoints wit blur: 463\n",
+      "Total Keypoints wit blur: 546\n",
+      "Total Keypoints wit blur: 672\n",
+      "Total Keypoints wit blur: 308\n",
+      "Total Keypoints wit blur: 408\n",
+      "Total Keypoints wit blur: 781\n",
+      "Total Keypoints wit blur: 142\n",
+      "Total Keypoints wit blur: 217\n",
+      "Total Keypoints wit blur: 550\n",
+      "Total Keypoints wit blur: 1180\n",
+      "Total Keypoints wit blur: 782\n",
+      "Total Keypoints wit blur: 500\n",
+      "Total Keypoints wit blur: 595\n",
+      "Total Keypoints wit blur: 166\n",
+      "Total Keypoints wit blur: 1153\n",
+      "Total Keypoints wit blur: 528\n",
+      "Total Keypoints wit blur: 886\n",
+      "Total Keypoints wit blur: 905\n",
+      "Total Keypoints wit blur: 126\n",
+      "Total Keypoints wit blur: 428\n",
+      "Total Keypoints wit blur: 1095\n",
+      "Total Keypoints wit blur: 757\n",
+      "Total Keypoints wit blur: 323\n",
+      "Total Keypoints wit blur: 176\n",
+      "Total Keypoints wit blur: 343\n",
+      "Total Keypoints wit blur: 1161\n",
+      "Total Keypoints wit blur: 798\n",
+      "Total Keypoints wit blur: 1029\n",
+      "Total Keypoints wit blur: 1155\n",
+      "Total Keypoints wit blur: 694\n",
+      "Total Keypoints wit blur: 393\n",
+      "Total Keypoints wit blur: 171\n",
+      "Total Keypoints wit blur: 572\n",
+      "Total Keypoints wit blur: 770\n",
+      "Total Keypoints wit blur: 299\n",
+      "Total Keypoints wit blur: 501\n",
+      "Total Keypoints wit blur: 528\n",
+      "Total Keypoints wit blur: 415\n",
+      "Total Keypoints wit blur: 382\n",
+      "Total Keypoints wit blur: 1068\n",
+      "Total Keypoints wit blur: 711\n",
+      "Total Keypoints wit blur: 746\n",
+      "Total Keypoints wit blur: 437\n",
+      "Total Keypoints wit blur: 325\n",
+      "Total Keypoints wit blur: 721\n",
+      "Total Keypoints wit blur: 695\n",
+      "Total Keypoints wit blur: 217\n",
+      "Total Keypoints wit blur: 921\n",
+      "Total Keypoints wit blur: 583\n",
+      "Total Keypoints wit blur: 289\n",
+      "Total Keypoints wit blur: 672\n",
+      "Total Keypoints wit blur: 528\n",
+      "Total Keypoints wit blur: 801\n",
+      "Total Keypoints wit blur: 369\n",
+      "Total Keypoints wit blur: 558\n",
+      "Total Keypoints wit blur: 228\n",
+      "Total Keypoints wit blur: 596\n",
+      "Total Keypoints wit blur: 565\n",
+      "Total Keypoints wit blur: 398\n",
+      "Total Keypoints wit blur: 963\n",
+      "Total Keypoints wit blur: 423\n",
+      "Total Keypoints wit blur: 1026\n",
+      "Total Keypoints wit blur: 172\n",
+      "Total Keypoints wit blur: 235\n",
+      "Total Keypoints wit blur: 363\n",
+      "Total Keypoints wit blur: 350\n",
+      "Total Keypoints wit blur: 238\n",
+      "Total Keypoints wit blur: 473\n",
+      "Total Keypoints wit blur: 740\n",
+      "Total Keypoints wit blur: 813\n",
+      "Total Keypoints wit blur: 213\n",
+      "Total Keypoints wit blur: 901\n",
+      "Total Keypoints wit blur: 1206\n",
+      "Total Keypoints wit blur: 510\n",
+      "Total Keypoints wit blur: 882\n",
+      "Total Keypoints wit blur: 182\n",
+      "Total Keypoints wit blur: 795\n",
+      "Total Keypoints wit blur: 1099\n",
+      "Total Keypoints wit blur: 525\n",
+      "Total Keypoints wit blur: 693\n",
+      "Total Keypoints wit blur: 846\n",
+      "Total Keypoints wit blur: 604\n",
+      "Total Keypoints wit blur: 1182\n",
+      "Total Keypoints wit blur: 569\n",
+      "Total Keypoints wit blur: 239\n",
+      "Total Keypoints wit blur: 756\n",
+      "Total Keypoints wit blur: 344\n",
+      "Total Keypoints wit blur: 401\n",
+      "Total Keypoints wit blur: 803\n",
+      "Total Keypoints wit blur: 938\n",
+      "Total Keypoints wit blur: 1211\n",
+      "Total Keypoints wit blur: 91\n",
+      "Total Keypoints wit blur: 878\n",
+      "Total Keypoints wit blur: 259\n",
+      "Total Keypoints wit blur: 143\n",
+      "Total Keypoints wit blur: 476\n",
+      "Total Keypoints wit blur: 486\n",
+      "Total Keypoints wit blur: 198\n",
+      "Total Keypoints wit blur: 523\n",
+      "Total Keypoints wit blur: 332\n",
+      "Total Keypoints wit blur: 491\n",
+      "Total Keypoints wit blur: 541\n",
+      "Total Keypoints wit blur: 424\n",
+      "Total Keypoints wit blur: 974\n",
+      "Total Keypoints wit blur: 318\n",
+      "Total Keypoints wit blur: 693\n",
+      "Total Keypoints wit blur: 1029\n",
+      "Total Keypoints wit blur: 243\n",
+      "Total Keypoints wit blur: 441\n",
+      "Total Keypoints wit blur: 574\n",
+      "Total Keypoints wit blur: 475\n",
+      "Total Keypoints wit blur: 927\n",
+      "Total Keypoints wit blur: 926\n",
+      "Total Keypoints wit blur: 485\n",
+      "Total Keypoints wit blur: 877\n",
+      "Total Keypoints wit blur: 684\n",
+      "Total Keypoints wit blur: 1310\n",
+      "Total Keypoints wit blur: 135\n",
+      "Total Keypoints wit blur: 1116\n",
+      "Total Keypoints wit blur: 528\n",
+      "Total Keypoints wit blur: 146\n",
+      "Total Keypoints wit blur: 1173\n",
+      "Total Keypoints wit blur: 445\n",
+      "Total Keypoints wit blur: 476\n",
+      "Total Keypoints wit blur: 625\n",
+      "Total Keypoints wit blur: 569\n",
+      "Total Keypoints wit blur: 856\n",
+      "Total Keypoints wit blur: 1226\n",
+      "Total Keypoints wit blur: 399\n",
+      "Total Keypoints wit blur: 509\n",
+      "Total Keypoints wit blur: 800\n",
+      "Total Keypoints wit blur: 316\n",
+      "Total Keypoints wit blur: 719\n",
+      "Total Keypoints wit blur: 963\n",
+      "Total Keypoints wit blur: 497\n",
+      "Total Keypoints wit blur: 465\n",
+      "Total Keypoints wit blur: 716\n",
+      "Total Keypoints wit blur: 149\n",
+      "Total Keypoints wit blur: 1644\n",
+      "Total Keypoints wit blur: 289\n",
+      "Total Keypoints wit blur: 220\n",
+      "Total Keypoints wit blur: 486\n",
+      "Total Keypoints wit blur: 1163\n",
+      "Total Keypoints wit blur: 1210\n",
+      "Total Keypoints wit blur: 138\n",
+      "Total Keypoints wit blur: 372\n",
+      "Total Keypoints wit blur: 476\n",
+      "Total Keypoints wit blur: 996\n",
+      "Total Keypoints wit blur: 156\n",
+      "Total Keypoints wit blur: 754\n",
+      "Total Keypoints wit blur: 370\n",
+      "Total Keypoints wit blur: 809\n",
+      "Total Keypoints wit blur: 323\n",
+      "Total Keypoints wit blur: 706\n",
+      "Total Keypoints wit blur: 353\n",
+      "Total Keypoints wit blur: 371\n",
+      "Total Keypoints wit blur: 103\n",
+      "Total Keypoints wit blur: 229\n",
+      "Total Keypoints wit blur: 473\n",
+      "Total Keypoints wit blur: 523\n",
+      "Total Keypoints wit blur: 424\n",
+      "Total Keypoints wit blur: 705\n",
+      "Total Keypoints wit blur: 670\n",
+      "Total Keypoints wit blur: 619\n",
+      "Total Keypoints wit blur: 1184\n",
+      "Total Keypoints wit blur: 460\n",
+      "Total Keypoints wit blur: 702\n",
+      "Total Keypoints wit blur: 918\n",
+      "Total Keypoints wit blur: 834\n",
+      "Total Keypoints wit blur: 623\n",
+      "Total Keypoints wit blur: 1028\n",
+      "Total Keypoints wit blur: 877\n",
+      "Total Keypoints wit blur: 1136\n",
+      "Total Keypoints wit blur: 1134\n",
+      "Total Keypoints wit blur: 588\n",
+      "Total Keypoints wit blur: 696\n",
+      "Total Keypoints wit blur: 199\n",
+      "Total Keypoints wit blur: 537\n",
+      "Total Keypoints wit blur: 175\n",
+      "Total Keypoints wit blur: 256\n",
+      "Total Keypoints wit blur: 236\n",
+      "Total Keypoints wit blur: 781\n",
+      "Total Keypoints wit blur: 493\n",
+      "Total Keypoints wit blur: 134\n",
+      "Total Keypoints wit blur: 246\n",
+      "Total Keypoints wit blur: 235\n",
+      "Total Keypoints wit blur: 698\n",
+      "Total Keypoints wit blur: 592\n",
+      "Total Keypoints wit blur: 320\n",
+      "Total Keypoints wit blur: 366\n",
+      "Total Keypoints wit blur: 229\n",
+      "Total Keypoints wit blur: 1920\n",
+      "Total Keypoints wit blur: 1301\n",
+      "Total Keypoints wit blur: 494\n",
+      "Total Keypoints wit blur: 492\n",
+      "Total Keypoints wit blur: 686\n",
+      "Total Keypoints wit blur: 222\n",
+      "Total Keypoints wit blur: 1277\n",
+      "Total Keypoints wit blur: 578\n",
+      "Total Keypoints wit blur: 550\n",
+      "Total Keypoints wit blur: 558\n",
+      "Total Keypoints wit blur: 615\n",
+      "Total Keypoints wit blur: 979\n",
+      "Total Keypoints wit blur: 325\n",
+      "Total Keypoints wit blur: 301\n",
+      "Total Keypoints wit blur: 396\n",
+      "Total Keypoints wit blur: 498\n",
+      "Total Keypoints wit blur: 300\n",
+      "Total Keypoints wit blur: 1295\n",
+      "Total Keypoints wit blur: 312\n",
+      "Total Keypoints wit blur: 205\n",
+      "Total Keypoints wit blur: 396\n",
+      "Total Keypoints wit blur: 650\n",
+      "Total Keypoints wit blur: 329\n",
+      "Total Keypoints wit blur: 1189\n",
+      "Total Keypoints wit blur: 1193\n",
+      "Total Keypoints wit blur: 498\n",
+      "Total Keypoints wit blur: 292\n",
+      "Total Keypoints wit blur: 636\n",
+      "Total Keypoints wit blur: 1079\n",
+      "Total Keypoints wit blur: 1086\n",
+      "Total Keypoints wit blur: 184\n",
+      "Total Keypoints wit blur: 478\n",
+      "Total Keypoints wit blur: 323\n",
+      "Total Keypoints wit blur: 897\n",
+      "Total Keypoints wit blur: 363\n",
+      "Total Keypoints wit blur: 1322\n",
+      "Total Keypoints wit blur: 596\n",
+      "Total Keypoints wit blur: 988\n",
+      "Total Keypoints wit blur: 924\n",
+      "Total Keypoints wit blur: 1212\n",
+      "Total Keypoints wit blur: 1265\n",
+      "Total Keypoints wit blur: 601\n",
+      "Total Keypoints wit blur: 663\n",
+      "Total Keypoints wit blur: 459\n",
+      "Total Keypoints wit blur: 432\n",
+      "Total Keypoints wit blur: 886\n",
+      "Total Keypoints wit blur: 1120\n",
+      "Total Keypoints wit blur: 295\n",
+      "Total Keypoints wit blur: 424\n",
+      "Total Keypoints wit blur: 2009\n",
+      "Total Keypoints wit blur: 1259\n",
+      "Total Keypoints wit blur: 1002\n",
+      "Total Keypoints wit blur: 546\n",
+      "Total Keypoints wit blur: 172\n",
+      "Total Keypoints wit blur: 514\n",
+      "Total Keypoints wit blur: 548\n",
+      "Total Keypoints wit blur: 993\n",
+      "Total Keypoints wit blur: 1005\n",
+      "Total Keypoints wit blur: 641\n",
+      "Total Keypoints wit blur: 446\n",
+      "Total Keypoints wit blur: 656\n",
+      "Total Keypoints wit blur: 506\n",
+      "Total Keypoints wit blur: 673\n",
+      "Total Keypoints wit blur: 1167\n",
+      "Total Keypoints wit blur: 492\n",
+      "Total Keypoints wit blur: 596\n",
+      "Total Keypoints wit blur: 145\n",
+      "Total Keypoints wit blur: 582\n",
+      "Total Keypoints wit blur: 537\n",
+      "Total Keypoints wit blur: 895\n",
+      "Total Keypoints wit blur: 446\n",
+      "Total Keypoints wit blur: 341\n",
+      "Total Keypoints wit blur: 641\n",
+      "Total Keypoints wit blur: 380\n",
+      "Total Keypoints wit blur: 1447\n",
+      "Total Keypoints wit blur: 1064\n",
+      "Total Keypoints wit blur: 549\n",
+      "Total Keypoints wit blur: 309\n",
+      "Total Keypoints wit blur: 412\n",
+      "Total Keypoints wit blur: 521\n",
+      "Total Keypoints wit blur: 608\n",
+      "Total Keypoints wit blur: 1345\n",
+      "Total Keypoints wit blur: 322\n",
+      "Total Keypoints wit blur: 669\n",
+      "Total Keypoints wit blur: 611\n",
+      "Total Keypoints wit blur: 159\n",
+      "Total Keypoints wit blur: 151\n",
+      "Total Keypoints wit blur: 703\n",
+      "Total Keypoints wit blur: 670\n",
+      "Total Keypoints wit blur: 649\n",
+      "Total Keypoints wit blur: 542\n",
+      "Total Keypoints wit blur: 77\n",
+      "Total Keypoints wit blur: 455\n",
+      "Total Keypoints wit blur: 663\n",
+      "Total Keypoints wit blur: 98\n",
+      "Total Keypoints wit blur: 376\n",
+      "Total Keypoints wit blur: 313\n",
+      "Total Keypoints wit blur: 157\n",
+      "Total Keypoints wit blur: 541\n",
+      "Total Keypoints wit blur: 663\n",
+      "Total Keypoints wit blur: 1212\n",
+      "Total Keypoints wit blur: 574\n",
+      "Total Keypoints wit blur: 534\n",
+      "Total Keypoints wit blur: 1072\n",
+      "Total Keypoints wit blur: 985\n",
+      "Total Keypoints wit blur: 788\n",
+      "Total Keypoints wit blur: 271\n",
+      "Total Keypoints wit blur: 728\n",
+      "Total Keypoints wit blur: 371\n",
+      "Total Keypoints wit blur: 516\n",
+      "Total Keypoints wit blur: 393\n",
+      "Total Keypoints wit blur: 676\n",
+      "Total Keypoints wit blur: 139\n",
+      "Total Keypoints wit blur: 191\n",
+      "Total Keypoints wit blur: 464\n",
+      "Total Keypoints wit blur: 545\n",
+      "Total Keypoints wit blur: 1192\n",
+      "Total Keypoints wit blur: 1065\n",
+      "Total Keypoints wit blur: 863\n",
+      "Total Keypoints wit blur: 361\n",
+      "Total Keypoints wit blur: 382\n",
+      "Total Keypoints wit blur: 458\n",
+      "Total Keypoints wit blur: 874\n",
+      "Total Keypoints wit blur: 722\n",
+      "Total Keypoints wit blur: 728\n",
+      "Total Keypoints wit blur: 517\n",
+      "Total Keypoints wit blur: 489\n",
+      "Total Keypoints wit blur: 259\n",
+      "Total Keypoints wit blur: 897\n",
+      "Total Keypoints wit blur: 719\n",
+      "Total Keypoints wit blur: 323\n",
+      "Total Keypoints wit blur: 613\n",
+      "Total Keypoints wit blur: 555\n",
+      "Total Keypoints wit blur: 150\n",
+      "Total Keypoints wit blur: 391\n",
+      "Total Keypoints wit blur: 598\n",
+      "Total Keypoints wit blur: 792\n",
+      "Total Keypoints wit blur: 362\n",
+      "Total Keypoints wit blur: 763\n",
+      "Total Keypoints wit blur: 947\n",
+      "Total Keypoints wit blur: 371\n",
+      "Total Keypoints wit blur: 720\n",
+      "Total Keypoints wit blur: 502\n",
+      "Total Keypoints wit blur: 1162\n",
+      "Total Keypoints wit blur: 237\n",
+      "Total Keypoints wit blur: 749\n",
+      "Total Keypoints wit blur: 819\n",
+      "Total Keypoints wit blur: 424\n",
+      "Total Keypoints wit blur: 627\n",
+      "Total Keypoints wit blur: 682\n",
+      "Total Keypoints wit blur: 811\n",
+      "Total Keypoints wit blur: 584\n",
+      "Total Keypoints wit blur: 390\n",
+      "Total Keypoints wit blur: 308\n",
+      "Total Keypoints wit blur: 550\n",
+      "Total Keypoints wit blur: 362\n",
+      "Total Keypoints wit blur: 294\n",
+      "Total Keypoints wit blur: 437\n",
+      "Total Keypoints wit blur: 1009\n",
+      "Total Keypoints wit blur: 409\n",
+      "Total Keypoints wit blur: 552\n",
+      "Total Keypoints wit blur: 587\n",
+      "Total Keypoints wit blur: 456\n",
+      "Total Keypoints wit blur: 865\n",
+      "Total Keypoints wit blur: 373\n",
+      "Total Keypoints wit blur: 738\n",
+      "Total Keypoints wit blur: 469\n",
+      "Total Keypoints wit blur: 2014\n",
+      "Total Keypoints wit blur: 870\n",
+      "Total Keypoints wit blur: 431\n",
+      "Total Keypoints wit blur: 634\n",
+      "Total Keypoints wit blur: 1047\n",
+      "Total Keypoints wit blur: 489\n",
+      "Total Keypoints wit blur: 358\n",
+      "Total Keypoints wit blur: 1797\n",
+      "Total Keypoints wit blur: 178\n",
+      "Total Keypoints wit blur: 560\n",
+      "Total Keypoints wit blur: 834\n",
+      "Total Keypoints wit blur: 496\n",
+      "Total Keypoints wit blur: 558\n",
+      "Total Keypoints wit blur: 77\n",
+      "Total Keypoints wit blur: 633\n",
+      "Total Keypoints wit blur: 907\n",
+      "Total Keypoints wit blur: 158\n",
+      "Total Keypoints wit blur: 556\n",
+      "Total Keypoints wit blur: 158\n",
+      "Total Keypoints wit blur: 693\n",
+      "Total Keypoints wit blur: 387\n",
+      "Total Keypoints wit blur: 460\n",
+      "Total Keypoints wit blur: 542\n",
+      "Total Keypoints wit blur: 604\n",
+      "Total Keypoints wit blur: 106\n",
+      "Total Keypoints wit blur: 676\n",
+      "Total Keypoints wit blur: 911\n",
+      "Total Keypoints wit blur: 204\n",
+      "Total Keypoints wit blur: 1045\n",
+      "Total Keypoints wit blur: 162\n",
+      "Total Keypoints wit blur: 676\n",
+      "Total Keypoints wit blur: 963\n",
+      "Total Keypoints wit blur: 465\n",
+      "Total Keypoints wit blur: 1124\n",
+      "Total Keypoints wit blur: 1212\n",
+      "Total Keypoints wit blur: 346\n",
+      "Total Keypoints wit blur: 179\n",
+      "Total Keypoints wit blur: 844\n",
+      "Total Keypoints wit blur: 693\n",
+      "Total Keypoints wit blur: 169\n",
+      "Total Keypoints wit blur: 522\n",
+      "Total Keypoints wit blur: 246\n",
+      "Total Keypoints wit blur: 400\n",
+      "Total Keypoints wit blur: 1803\n",
+      "Total Keypoints wit blur: 539\n",
+      "Total Keypoints wit blur: 818\n",
+      "Total Keypoints wit blur: 996\n",
+      "Total Keypoints wit blur: 96\n",
+      "Total Keypoints wit blur: 469\n",
+      "Total Keypoints wit blur: 319\n",
+      "Total Keypoints wit blur: 368\n",
+      "Total Keypoints wit blur: 325\n",
+      "Total Keypoints wit blur: 382\n",
+      "Total Keypoints wit blur: 377\n",
+      "Total Keypoints wit blur: 403\n",
+      "Total Keypoints wit blur: 1505\n",
+      "Total Keypoints wit blur: 505\n",
+      "Total Keypoints wit blur: 143\n",
+      "Total Keypoints wit blur: 1259\n",
+      "Total Keypoints wit blur: 345\n",
+      "Total Keypoints wit blur: 1330\n",
+      "Total Keypoints wit blur: 432\n",
+      "Total Keypoints wit blur: 796\n",
+      "Total Keypoints wit blur: 169\n",
+      "Total Keypoints wit blur: 469\n",
+      "Total Keypoints wit blur: 685\n",
+      "Total Keypoints wit blur: 715\n",
+      "Total Keypoints wit blur: 526\n",
+      "Total Keypoints wit blur: 323\n",
+      "Total Keypoints wit blur: 236\n",
+      "Total Keypoints wit blur: 552\n",
+      "Total Keypoints wit blur: 203\n",
+      "Total Keypoints wit blur: 776\n",
+      "Total Keypoints wit blur: 1358\n",
+      "Total Keypoints wit blur: 487\n",
+      "Total Keypoints wit blur: 1002\n",
+      "Total Keypoints wit blur: 1047\n",
+      "Total Keypoints wit blur: 241\n",
+      "Total Keypoints wit blur: 840\n",
+      "Total Keypoints wit blur: 300\n",
+      "Total Keypoints wit blur: 140\n",
+      "Total Keypoints wit blur: 369\n",
+      "Total Keypoints wit blur: 879\n",
+      "Total Keypoints wit blur: 356\n",
+      "Total Keypoints wit blur: 636\n",
+      "Total Keypoints wit blur: 795\n",
+      "Total Keypoints wit blur: 470\n",
+      "Total Keypoints wit blur: 83\n",
+      "Total Keypoints wit blur: 384\n",
+      "Total Keypoints wit blur: 1026\n",
+      "Total Keypoints wit blur: 1090\n",
+      "Total Keypoints wit blur: 174\n",
+      "Total Keypoints wit blur: 829\n",
+      "Total Keypoints wit blur: 321\n",
+      "Total Keypoints wit blur: 491\n",
+      "Total Keypoints wit blur: 285\n",
+      "Total Keypoints wit blur: 257\n",
+      "Total Keypoints wit blur: 336\n",
+      "Total Keypoints wit blur: 921\n",
+      "Total Keypoints wit blur: 669\n",
+      "Total Keypoints wit blur: 121\n",
+      "Total Keypoints wit blur: 67\n",
+      "Total Keypoints wit blur: 400\n",
+      "Total Keypoints wit blur: 953\n",
+      "Total Keypoints wit blur: 454\n",
+      "Total Keypoints wit blur: 357\n",
+      "Total Keypoints wit blur: 905\n",
+      "Total Keypoints wit blur: 2038\n",
+      "Total Keypoints wit blur: 243\n",
+      "Total Keypoints wit blur: 471\n",
+      "Total Keypoints wit blur: 2024\n",
+      "Total Keypoints wit blur: 809\n",
+      "Total Keypoints wit blur: 764\n",
+      "Total Keypoints wit blur: 672\n",
+      "Total Keypoints wit blur: 206\n",
+      "Total Keypoints wit blur: 1109\n",
+      "Total Keypoints wit blur: 651\n",
+      "Total Keypoints wit blur: 532\n",
+      "Total Keypoints wit blur: 393\n",
+      "Total Keypoints wit blur: 151\n",
+      "Total Keypoints wit blur: 670\n",
+      "Total Keypoints wit blur: 1547\n",
+      "Total Keypoints wit blur: 1083\n",
+      "Total Keypoints wit blur: 138\n",
+      "Total Keypoints wit blur: 661\n",
+      "Total Keypoints wit blur: 578\n",
+      "Total Keypoints wit blur: 427\n",
+      "Total Keypoints wit blur: 1200\n",
+      "Total Keypoints wit blur: 125\n",
+      "Total Keypoints wit blur: 1283\n",
+      "Total Keypoints wit blur: 708\n",
+      "Total Keypoints wit blur: 288\n",
+      "Total Keypoints wit blur: 173\n",
+      "Total Keypoints wit blur: 600\n",
+      "Total Keypoints wit blur: 336\n",
+      "Total Keypoints wit blur: 395\n",
+      "Total Keypoints wit blur: 509\n",
+      "Total Keypoints wit blur: 546\n",
+      "Total Keypoints wit blur: 1179\n",
+      "Total Keypoints wit blur: 570\n",
+      "Total Keypoints wit blur: 212\n",
+      "Total Keypoints wit blur: 335\n",
+      "Total Keypoints wit blur: 132\n",
+      "Total Keypoints wit blur: 1355\n",
+      "Total Keypoints wit blur: 222\n",
+      "Total Keypoints wit blur: 760\n",
+      "Total Keypoints wit blur: 1210\n",
+      "Total Keypoints wit blur: 1197\n",
+      "Total Keypoints wit blur: 950\n",
+      "Total Keypoints wit blur: 315\n",
+      "Total Keypoints wit blur: 640\n",
+      "Total Keypoints wit blur: 146\n",
+      "Total Keypoints wit blur: 701\n",
+      "Total Keypoints wit blur: 227\n",
+      "Total Keypoints wit blur: 342\n",
+      "Total Keypoints wit blur: 367\n",
+      "Total Keypoints wit blur: 311\n",
+      "Total Keypoints wit blur: 283\n",
+      "Total Keypoints wit blur: 1039\n",
+      "Total Keypoints wit blur: 427\n",
+      "Total Keypoints wit blur: 116\n",
+      "Total Keypoints wit blur: 761\n",
+      "Total Keypoints wit blur: 805\n",
+      "Total Keypoints wit blur: 841\n",
+      "Total Keypoints wit blur: 479\n",
+      "Total Keypoints wit blur: 489\n",
+      "Total Keypoints wit blur: 1154\n",
+      "Total Keypoints wit blur: 211\n",
+      "Total Keypoints wit blur: 554\n",
+      "Total Keypoints wit blur: 219\n",
+      "Total Keypoints wit blur: 842\n",
+      "Total Keypoints wit blur: 660\n",
+      "Total Keypoints wit blur: 982\n",
+      "Total Keypoints wit blur: 649\n",
+      "Total Keypoints wit blur: 782\n",
+      "Total Keypoints wit blur: 472\n",
+      "Total Keypoints wit blur: 294\n",
+      "Total Keypoints wit blur: 757\n",
+      "Total Keypoints wit blur: 596\n",
+      "Total Keypoints wit blur: 895\n",
+      "Total Keypoints wit blur: 753\n",
+      "Total Keypoints wit blur: 790\n",
+      "Total Keypoints wit blur: 241\n",
+      "Total Keypoints wit blur: 323\n",
+      "Total Keypoints wit blur: 1868\n",
+      "Total Keypoints wit blur: 311\n",
+      "Total Keypoints wit blur: 769\n",
+      "Total Keypoints wit blur: 116\n",
+      "Total Keypoints wit blur: 465\n",
+      "Total Keypoints wit blur: 650\n",
+      "Total Keypoints wit blur: 1051\n",
+      "Total Keypoints wit blur: 765\n",
+      "Total Keypoints wit blur: 359\n",
+      "Total Keypoints wit blur: 239\n",
+      "Total Keypoints wit blur: 1099\n",
+      "Total Keypoints wit blur: 685\n",
+      "Total Keypoints wit blur: 593\n",
+      "Total Keypoints wit blur: 1137\n",
+      "Total Keypoints wit blur: 369\n",
+      "Total Keypoints wit blur: 224\n",
+      "Total Keypoints wit blur: 475\n",
+      "Total Keypoints wit blur: 935\n",
+      "Total Keypoints wit blur: 191\n",
+      "Total Keypoints wit blur: 478\n",
+      "Total Keypoints wit blur: 1026\n",
+      "Total Keypoints wit blur: 615\n",
+      "Total Keypoints wit blur: 748\n",
+      "Total Keypoints wit blur: 1153\n",
+      "Total Keypoints wit blur: 676\n",
+      "Total Keypoints wit blur: 556\n",
+      "Total Keypoints wit blur: 553\n",
+      "Total Keypoints wit blur: 646\n",
+      "Total Keypoints wit blur: 339\n",
+      "Total Keypoints wit blur: 923\n",
+      "Total Keypoints wit blur: 481\n",
+      "Total Keypoints wit blur: 290\n",
+      "Total Keypoints wit blur: 486\n",
+      "Total Keypoints wit blur: 470\n",
+      "Total Keypoints wit blur: 714\n",
+      "Total Keypoints wit blur: 705\n",
+      "Total Keypoints wit blur: 528\n",
+      "Total Keypoints wit blur: 163\n",
+      "Total Keypoints wit blur: 173\n",
+      "Total Keypoints wit blur: 145\n",
+      "Total Keypoints wit blur: 1558\n",
+      "Total Keypoints wit blur: 1412\n",
+      "Total Keypoints wit blur: 1248\n",
+      "Total Keypoints wit blur: 559\n",
+      "Total Keypoints wit blur: 132\n",
+      "Total Keypoints wit blur: 1135\n",
+      "Total Keypoints wit blur: 432\n",
+      "Total Keypoints wit blur: 700\n",
+      "Total Keypoints wit blur: 563\n"
+     ]
+    }
+   ],
+   "source": [
+    "### Median filter , Gaussian, bilateral\n",
+    "\n",
+    "input1=  r\"./data/data_aug/train/bus/\"\n",
+    "input2=  r\"./data/data_aug/train/auto/\"\n",
+    "\n",
+    "ksize = (3, 3)  # Box filter for blurring\n",
+    "i=0\n",
+    "for filename in os.listdir(input1):\n",
+    "    \n",
+    "    path=os.path.join(input1,filename)\n",
+    "    imgblr=cv2.imread(path)\n",
+    "    imgGausblr = cv2.GaussianBlur(imgblr, ksize, cv2.BORDER_DEFAULT) \n",
+    "    \n",
+    "    #initialise sift descriptor\n",
+    "    #sift = cv2.xfeatures2d.SIFT_create()\n",
+    "    sift = cv2.SIFT_create()\n",
+    "    keypoints, descriptors = sift.detectAndCompute(imgGausblr, None)\n",
+    "    \n",
+    "    #convert the descriptor array into a dataframe format\n",
+    "    out=pd.DataFrame(descriptors)\n",
+    "    #print(\"descriptor shape \",i,\" : \", out.shape)\n",
+    "    i=i+1\n",
+    "    #drop first coloumn as it's the no of feature detected. Not required.append to the csv file\n",
+    "    csv_data=out.to_csv('bus_blur_sift1.csv', mode='a', header=False,index=False)\n",
+    "\n",
+    "    # find and draw the keypoints\n",
+    "\n",
+    "    print( \"Total Keypoints wit blur: {}\".format(len(keypoints)) )"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "ES6Y7PTsBxrN",
+    "outputId": "0f6911ce-99fc-422f-efb9-a73d3fdcb0a3"
+   },
+   "outputs": [],
+   "source": [
+    "data1 = pd.read_csv(r'./bus_430.csv',header=None,dtype='uint8')\n",
+    "data1 = data1.astype(np.uint8)\n",
+    "data1"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "LFVFo3YO1r8Z",
+    "outputId": "07da2e8d-8c31-42a2-a5bb-6abc2c4c5ac6"
+   },
+   "outputs": [],
+   "source": [
+    "data2= pd.read_csv(r'CV_CP/430_all/rik_430.csv',header=None,dtype='uint8')\n",
+    "data2=data2.astype(np.uint8)\n",
+    "data2"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "1ndkLE55MdvL",
+    "outputId": "da5076cb-f5ae-4ee7-e15d-e70fb203014a"
+   },
+   "outputs": [],
+   "source": [
+    "data3= pd.read_csv(r'CV_CP/430_all/negative_430.csv',header=None,dtype='uint8')\n",
+    "data3=data3.astype(np.uint8)\n",
+    "data3"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "5my-S1Ay1r8a"
+   },
+   "outputs": [],
+   "source": [
+    "data=data1.append(data2)\n",
+    "data=data.append(data3)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "Vbb-GTmMZ1iU"
+   },
+   "outputs": [],
+   "source": [
+    "data.columns = data.columns.astype(str)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "e4qejrYOUnly",
+    "outputId": "a302d233-2664-46db-ca25-d32190c72c84"
+   },
+   "outputs": [],
+   "source": [
+    "data"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "NDN263tFQxwx"
+   },
+   "outputs": [],
+   "source": [
+    "data.to_parquet('CV_CP/430_all/df_430.parquet')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "jSEP2mFu1r8a"
+   },
+   "outputs": [],
+   "source": [
+    "csv_data=data.to_csv('CV_CP/430_all/total_430', mode='a', header=False,index=False)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "xDHt9b3u1r8c"
+   },
+   "source": [
+    "# Kmeans"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "HmZeKQzzUlmt"
+   },
+   "outputs": [],
+   "source": [
+    "data = pd.read_parquet(\"CV_CP/430_all/df_430.parquet\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/",
+     "height": 487
+    },
+    "id": "xeeXM7oUpv0g",
+    "outputId": "c4b604fe-2745-4464-bfb7-bf02f8c4c029"
+   },
+   "outputs": [],
+   "source": [
+    "data"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "OWDhYszrPIie"
+   },
+   "outputs": [],
+   "source": [
+    "kmeans = KMeans(n_clusters=5)\n",
+    "kmeans.fit(data)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "hWjMkXsA1r8e"
+   },
+   "outputs": [],
+   "source": [
+    "import pickle"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "nqzkw4eA1r8f"
+   },
+   "outputs": [],
+   "source": [
+    "# save the model to disk\n",
+    "filename = 'CV_CP/430_all/Kmeans_CL_5_430_sample_Model.sav'\n",
+    "pickle.dump(kmeans, open(filename, 'wb'))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "immtZ8WUUADN",
+    "outputId": "b6e45231-9559-490f-b86f-763c77d22054"
+   },
+   "outputs": [],
+   "source": [
+    "kmeans.labels_"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "ktyI-nmMmf_5"
+   },
+   "outputs": [],
+   "source": [
+    "kmeans = pickle.load(open('CV_CP/430_all/Kmeans_CL_5_430_sample_Model.sav', 'rb'))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "CHIZ7OYs1r8f",
+    "outputId": "b0c714a8-cc1f-49fd-caa9-f5efa11f7f45"
+   },
+   "outputs": [],
+   "source": [
+    "hist=np.histogram(kmeans.labels_,bins=[0,1,2,3,4,5])\n",
+    "\n",
+    "\n",
+    "print('histogram of trained kmeans')\n",
+    "print(hist,\"\\n\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "vhUd2cC81r8g",
+    "outputId": "a9bdd3fc-e530-41e7-db76-858bc34b782c"
+   },
+   "outputs": [],
+   "source": [
+    "#performing kmeans prediction of the entire rickshaw dataset with the pretrained kmeans model\n",
+    "\n",
+    "#initialising i=0; as its the first class\n",
+    "i=0\n",
+    "data=[]\n",
+    "#k=0\n",
+    "\n",
+    "for filename in os.listdir(folder1):\n",
+    "    #path\n",
+    "    path=os.path.join(folder1,filename)\n",
+    "    a=cv2.imread(path)\n",
+    "    \n",
+    "    #resize image\n",
+    "    resize=(280,430)\n",
+    "    img=cv2.resize(a,resize)\n",
+    "    \n",
+    "    #gray image\n",
+    "    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)\n",
+    "    \n",
+    "    sift = cv2.xfeatures2d.SIFT_create()\n",
+    "    \n",
+    "    keypoints, descriptors = sift.detectAndCompute(gray, None)\n",
+    "    out=pd.DataFrame(descriptors)\n",
+    "    \n",
+    "    #predict values of feature vector with pretrained kmeans\n",
+    "    #ValueError: Buffer dtype mismatch, expected 'float', in order to avoid this dtype=np.double\n",
+    "    \n",
+    "    array_double = np.array(out, dtype=np.double)\n",
+    "    a=kmeans.predict(array_double)\n",
+    "    \n",
+    "    #hist= np.histogram(a,bins=[0,1,2,3,4,5,6,7,8])\n",
+    "    hist= np.histogram(a,bins=[0,1,2,3,4,5])\n",
+    "    #append the dataframe into the array in append mode, the array will only have 5 values which will store the values in a row\n",
+    "    data.append(hist[0])\n",
+    "    #k=k+1\n",
+    "    \n",
+    "#convert Array to Dataframe and append to the list\n",
+    "Output = pd.DataFrame(data)\n",
+    "#add row class \n",
+    "Output[\"Class\"] = i \n",
+    "csv_data=Output.to_csv('rik_km_5_430.csv', mode='a',header=False,index=False)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "OwHvWE4xWz0m",
+    "outputId": "e3c1b161-df7a-4e6d-9fe7-71311e086e1b"
+   },
+   "outputs": [],
+   "source": [
+    "np.histogram(a,bins=[0,1,2,3,4,5])[0] #test"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "mLmcqQ3L1r8h",
+    "outputId": "8dcda450-45b2-4920-f95f-6e6517051c27"
+   },
+   "outputs": [],
+   "source": [
+    "#performing kmeans prediction of the entire bus dataset with the pretrained kmeans model\n",
+    "\n",
+    "#initialising i=1; as its the 2nd class\n",
+    "i=1\n",
+    "data=[]\n",
+    "k=0\n",
+    "for filename in os.listdir(folder2):\n",
+    "      path=os.path.join(folder2,filename)\n",
+    "      a=cv2.imread(path)\n",
+    "      #resize image\n",
+    "      resize=(280,430)\n",
+    "      img=cv2.resize(a,resize)\n",
+    "      \n",
+    "      #gray image\n",
+    "      gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)\n",
+    "      \n",
+    "      sift = cv2.xfeatures2d.SIFT_create()\n",
+    "      \n",
+    "      keypoints, descriptors = sift.detectAndCompute(gray, None)\n",
+    "      out=pd.DataFrame(descriptors)\n",
+    "      \n",
+    "      #predict values of feature vector with pretrained kmeans\n",
+    "      #ValueError: Buffer dtype mismatch, expected 'float', in order to avoid this dtype=np.double\n",
+    "      \n",
+    "      array_double = np.array(out, dtype=np.double)\n",
+    "      a=kmeans.predict(array_double)\n",
+    "      \n",
+    "      hist= np.histogram(a,bins=[0,1,2,3,4,5])\n",
+    "      \n",
+    "      #append the dataframe into the array in append mode, the array will only have 5 values which will store the values in a row\n",
+    "      data.append(hist[0])\n",
+    "      k=k+1\n",
+    "    \n",
+    "#convert Array to Dataframe and append to the list\n",
+    "Output = pd.DataFrame(data)\n",
+    "#add row class \n",
+    "Output[\"Class\"] = i \n",
+    "csv_data=Output.to_csv('bus_km_8_430.csv', mode='a',header=False,index=False)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "tQZI_mcGe5JZ",
+    "outputId": "56babddd-3d48-4889-a17d-4b43b7391e2b"
+   },
+   "outputs": [],
+   "source": [
+    "#performing kmeans prediction of the entire negative dataset with the pretrained kmeans model\n",
+    "\n",
+    "#initialising i=1; as its the 2nd class\n",
+    "i=2\n",
+    "data=[]\n",
+    "k=0\n",
+    "for filename in os.listdir(folder3):\n",
+    "      path=os.path.join(folder3,filename)\n",
+    "      a=cv2.imread(path)\n",
+    "      #resize image\n",
+    "      resize=(230,480)\n",
+    "      img=cv2.resize(a,resize)\n",
+    "      \n",
+    "      #gray image\n",
+    "      gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)\n",
+    "      \n",
+    "      sift = cv2.xfeatures2d.SIFT_create()\n",
+    "      \n",
+    "      keypoints, descriptors = sift.detectAndCompute(gray, None)\n",
+    "      out=pd.DataFrame(descriptors)\n",
+    "      \n",
+    "      #predict values of feature vector with pretrained kmeans\n",
+    "      #ValueError: Buffer dtype mismatch, expected 'float', in order to avoid this dtype=np.double\n",
+    "      \n",
+    "      array_double = np.array(out, dtype=np.double)\n",
+    "      a=kmeans.predict(array_double)\n",
+    "      \n",
+    "      hist= np.histogram(a,bins=[0,1,2,3,4,5])\n",
+    "      \n",
+    "      #append the dataframe into the array in append mode, the array will only have 5 values which will store the values in a row\n",
+    "      data.append(hist[0])\n",
+    "      k=k+1\n",
+    "    \n",
+    "#convert Array to Dataframe and append to the list\n",
+    "Output = pd.DataFrame(data)\n",
+    "#add row class \n",
+    "Output[\"Class\"] = i \n",
+    "csv_data=Output.to_csv('neg_km_5_430.csv', mode='a',header=False,index=False)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "8gd-A1ReHOgM"
+   },
+   "outputs": [],
+   "source": [
+    "csv_data=Output.to_csv('FinalNstr.csv', mode='a',header=False,index=False)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "6OYBQlro1r8h"
+   },
+   "outputs": [],
+   "source": [
+    "#Displaying the kmeans predicted data\n",
+    "print(\"R\")\n",
+    "dat1= pd.read_csv(r'CV_CP/430_all/rik_km_5_430.csv',header=None)\n",
+    "print(dat1)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "lNK7e2Oo1r8i"
+   },
+   "outputs": [],
+   "source": [
+    "print(\"B\")\n",
+    "dat2= pd.read_csv(r'CV_CP/430_all/bus_km_8_430.csv',header=None)\n",
+    "print(dat2)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "tBnDfmSmg67n"
+   },
+   "outputs": [],
+   "source": [
+    "print(\"N\")\n",
+    "dat3= pd.read_csv(r'CV_CP/430_all/neg_km_5_430.csv',header=None)\n",
+    "print(dat3)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "V2uW6rIK1r8i"
+   },
+   "outputs": [],
+   "source": [
+    "#appending All classes into 1 csv file\n",
+    "\n",
+    "A=dat1.append(dat2)\n",
+    "A = A.append(dat3)\n",
+    "csv_data=A.to_csv('FinalFV.csv', mode='a',header=False,index=False)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "5Ko1kHbyGLFG"
+   },
+   "outputs": [],
+   "source": [
+    "A = pd.read_csv(\"CV_CP/430_all/FinalFV.csv\")"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "3QHmVghBZ45Q"
+   },
+   "source": [
+    "# PCA"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/",
+     "height": 423
+    },
+    "id": "cssdIz0j1r8j",
+    "outputId": "31d5d27b-f07c-4ea1-b4da-7947c5eed125"
+   },
+   "outputs": [],
+   "source": [
+    "A"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "QK9XrUbg1r8j"
+   },
+   "outputs": [],
+   "source": [
+    "x = A.iloc[:,0:5].values"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "KC5MRhOC1r8k"
+   },
+   "outputs": [],
+   "source": [
+    "y = A.iloc[:,5].values"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "ECHTTUIc1r8k"
+   },
+   "outputs": [],
+   "source": [
+    "from sklearn.preprocessing import StandardScaler\n",
+    "DhoniS = StandardScaler()\n",
+    "Dhoni = DhoniS.fit_transform(x)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "IxLC6yJW1r8k",
+    "outputId": "04f26f62-f4a5-4eb9-f208-298d35942d44"
+   },
+   "outputs": [],
+   "source": [
+    "Dhoni"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "MNoIPzCF1r8k"
+   },
+   "outputs": [],
+   "source": [
+    "from sklearn.decomposition import PCA"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "WujWbvtg1r8m",
+    "outputId": "177d74f2-56dc-40a7-c72b-0544a8b5a612"
+   },
+   "outputs": [],
+   "source": [
+    "pca = PCA(n_components=5)\n",
+    "pca.fit(Dhoni)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "bjZ4WWEh1r8n"
+   },
+   "outputs": [],
+   "source": [
+    "# save the model to disk\n",
+    "filename = 'PCA_5_430_Model.sav'\n",
+    "pickle.dump(pca, open(filename, 'wb'))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "Y36jGfRm1r8n"
+   },
+   "outputs": [],
+   "source": [
+    "Bhumi = pca.transform(Dhoni)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "fxxlQ4l41r8n",
+    "outputId": "f9411ee8-aaa5-4b62-e127-03cf29845e37"
+   },
+   "outputs": [],
+   "source": [
+    "Bhumi"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "nJL7lqnt1r8n",
+    "outputId": "516510e1-2aa9-4fa3-b163-294125d4e7bb"
+   },
+   "outputs": [],
+   "source": [
+    "Bhumi.shape"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "m-RTeShI1r8n",
+    "outputId": "a0ca9540-23b9-4824-e1da-955aeb8e825c"
+   },
+   "outputs": [],
+   "source": [
+    "print(pca.explained_variance_ratio_) "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "Qktmjao71r8o"
+   },
+   "outputs": [],
+   "source": [
+    "Bhumi = pd.DataFrame(Bhumi)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/",
+     "height": 423
+    },
+    "id": "FIMeE_M31r8o",
+    "outputId": "5140736b-98c9-4b06-a911-40d0c2d4ee41"
+   },
+   "outputs": [],
+   "source": [
+    "Bhumi"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "3R5q-DHd1r8o"
+   },
+   "outputs": [],
+   "source": [
+    "B=pd.concat([Bhumi, pd.DataFrame(y)],axis=1)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "X7qRiEh31r8o"
+   },
+   "outputs": [],
+   "source": [
+    "csv_data=B.to_csv('FinalPCAFV5_430_5.csv', mode='a',header=False,index=False) #SAVING PCA OUTPUT"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "O-yNivjzXYO_"
+   },
+   "source": [
+    "# TESTING THE DATASET"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "i0b4vpZhIUGM"
+   },
+   "source": [
+    "# Load Models"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "_YrMHmrsH1Vl"
+   },
+   "outputs": [],
+   "source": [
+    "kmeans = pickle.load(open('/content/drive/MyDrive/CV_CP/430_all/Kmeans_CL_5_430_sample_Model.sav', 'rb'))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "OnKV-WJ8IKNM",
+    "outputId": "e324350d-9464-4d6a-aa9f-9b0ad031f0e2"
+   },
+   "outputs": [],
+   "source": [
+    "hist=np.histogram(kmeans.labels_,bins=[0,1,2,3,4,5])\n",
+    "\n",
+    "\n",
+    "print('histogram of trained kmeans')\n",
+    "print(hist,\"\\n\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "JrQ-yF6iIvpF"
+   },
+   "outputs": [],
+   "source": [
+    "from sklearn.preprocessing import StandardScaler"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "QqHdzDEDaIPR"
+   },
+   "outputs": [],
+   "source": [
+    "scaler = pickle.load(open(\"/content/drive/MyDrive/CV_CP/430_all/PCA_5_430_SCALER.sav\", 'rb'))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "sn8B__AfJGoF"
+   },
+   "outputs": [],
+   "source": [
+    "pca = pickle.load(open(\"/content/drive/MyDrive/CV_CP/430_all/PCA_5_430_Model.sav\", 'rb'))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "y-dbLq0_JNzV",
+    "outputId": "aa7f3bec-92dd-4b4f-af48-aad2053ecb31"
+   },
+   "outputs": [],
+   "source": [
+    "data= pd.read_csv(r'/content/drive/MyDrive/CV_CP/430_all/FinalPCAFV5_430_5.csv',header=None)\n",
+    "\n",
+    "data.head()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "mkOgOPNrJXh9"
+   },
+   "outputs": [],
+   "source": [
+    "#assigning x the columns from 1 to 128 for training\n",
+    "x = data.iloc[:,0:5].values\n",
+    "#assigning y with the column \"Class\" as target variable\n",
+    "y = data.iloc[:,5]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "T02nC3P9JYxO"
+   },
+   "outputs": [],
+   "source": [
+    "#Dataset split into train and test with 80% Training and 20% Testing\n",
+    "x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.20, random_state=0)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "E1oCREAyJvwd"
+   },
+   "source": [
+    "# TEST DT"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "GBz8cAcxKYpG"
+   },
+   "outputs": [],
+   "source": [
+    "def predictor(path, model):\n",
+    "  j = 0\n",
+    "  gath = []\n",
+    "  for i in os.listdir(path):\n",
+    "    if j == 200:\n",
+    "      break\n",
+    "    img=cv2.imread(os.path.join(path,i))\n",
+    "    resize=(280,430)\n",
+    "\n",
+    "    #resize image\n",
+    "    #img=cv2.resize(a,resize)\n",
+    "    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)\n",
+    "\n",
+    "    #initialise sift descriptor\n",
+    "    sift = cv2.xfeatures2d.SIFT_create()\n",
+    "    keypoints, descriptors = sift.detectAndCompute(gray, None)\n",
+    "    out=pd.DataFrame(descriptors)\n",
+    "    #initialise Kmeans and create 5 clusters\n",
+    "    #test the model for the features i.e. for all elements in the Dataframe\n",
+    "    array_double = np.array(out, dtype=np.double)\n",
+    "    a=kmeans.predict(array_double)\n",
+    "    hist=np.histogram(a,bins=[0,1,2,3,4,5])\n",
+    "    #Output = pd.DataFrame([hist[0]])\n",
+    "    gath.append(hist[0])\n",
+    "    j+=1\n",
+    "  scaler1 = pickle.load(open(\"/content/drive/MyDrive/CV_CP/430_all/PCA_5_430_SCALER.sav\", 'rb'))\n",
+    "  pca = pickle.load(open(\"/content/drive/MyDrive/CV_CP/430_all/PCA_5_430_Model.sav\", 'rb'))\n",
+    "  x = scaler.fit_transform(pd.DataFrame(gath))\n",
+    "  y = pca.transform(x)\n",
+    "  y_pred1 = model.predict(y)\n",
+    "  #prints the prediction of the class\n",
+    "  return y_pred1"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "uHi4c5CkMVIr",
+    "outputId": "e2ec13eb-f9e0-4867-8313-99e9cf29f5b8"
+   },
+   "outputs": [],
+   "source": [
+    "path = folder1\n",
+    "model = rfc\n",
+    "predictor(path, model)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "paNEJgb5ZBmm"
+   },
+   "source": [
+    "# DT"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "Rm5kLSN0Jct9",
+    "outputId": "1dbde441-55b3-46a0-bf18-90a631db034f"
+   },
+   "outputs": [],
+   "source": [
+    "#Decision Tree Classifier\n",
+    "#Assign model with Decision Tree classifier\n",
+    "model1 = DecisionTreeClassifier(max_depth=40)\n",
+    "#training the model with the Training Variables \n",
+    "model1.fit(x_train, y_train)\n",
+    "#predicting the traget variable using testing variables\n",
+    "y_pred1 = model1.predict(x_test)\n",
+    "#Results\n",
+    "print(\"Decision Tree Results\")\n",
+    "print(\"Decision Tree Accuracy: \",accuracy_score(y_test, y_pred1)*100,\"%\")\n",
+    "print(\"CM = \\n\",confusion_matrix(y_test, y_pred1))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "lrzraMAKlWjJ"
+   },
+   "outputs": [],
+   "source": [
+    "para = [] # list to save all parameter values to plot\n",
+    "acc = [] # list to save all accuracy values to plot\n",
+    "for i in range(10,200,10):\n",
+    "  model1 = DecisionTreeClassifier(max_depth=i)\n",
+    "  model1.fit(x_train, y_train) #fitting the model\n",
+    "  y_pred1 = model1.predict(x_test) # predicting the output\n",
+    "  para.append(i) #saving to list\n",
+    "  acc.append(accuracy_score(y_test, y_pred1)*100) #saving to list"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/",
+     "height": 282
+    },
+    "id": "geZu44_7mv_y",
+    "outputId": "28395b41-00f4-4f5e-d25d-47301b45f1e5"
+   },
+   "outputs": [],
+   "source": [
+    "plt.plot(para,acc) #plotting accuracy vs parameter "
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "zoNgCeTKeYzY"
+   },
+   "source": [
+    "# SVM"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "6kC_Nso-fLAq"
+   },
+   "outputs": [],
+   "source": [
+    "kernels = ['linear', 'poly', 'rbf', 'sigmoid']"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "PH7O0-WYfOk4",
+    "outputId": "e6c10e18-5489-4bda-cf93-fe73235f483b"
+   },
+   "outputs": [],
+   "source": [
+    "print(\"OVA\")\n",
+    "p = dict()\n",
+    "for i in kernels:\n",
+    "  SVM = SVC(kernel=i, decision_function_shape='ovr')\n",
+    "  SV = SVM.fit(x_train, y_train)\n",
+    "  y_pred1 = SV.predict(x_test)\n",
+    "  #Results\n",
+    "  p[i] = accuracy_score(y_test, y_pred1)*100\n",
+    "  print(\"SVM \" + i +\" Results\")\n",
+    "  print(\"SVM  \" + i +\" Accuracy: \",accuracy_score(y_test, y_pred1)*100,\"%\")\n",
+    "  print(\"CM = \\n\",confusion_matrix(y_test, y_pred1))\n",
+    "  print(\"\\n\\n\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/",
+     "height": 282
+    },
+    "id": "J3v40Vfqp8DB",
+    "outputId": "50181862-d895-403d-b053-8c4ef1c30b61"
+   },
+   "outputs": [],
+   "source": [
+    "plt.bar(p.keys(),p.values())"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "CHLkVtBjgDSJ",
+    "outputId": "0340fe79-8b88-43b7-8333-15de463a6abe"
+   },
+   "outputs": [],
+   "source": [
+    "p1 = dict()\n",
+    "print(\"OVO\")\n",
+    "for i in kernels:\n",
+    "  SVM = SVC(kernel=i, decision_function_shape='ovo' )\n",
+    "  SV = SVM.fit(x_train, y_train)\n",
+    "  y_pred1 = SV.predict(x_test)\n",
+    "  #Results\n",
+    "  p1[i] = accuracy_score(y_test, y_pred1)*100\n",
+    "  print(\"SVM \" + i +\" Results\")\n",
+    "  print(\"SVM  \" + i +\" Accuracy: \",accuracy_score(y_test, y_pred1)*100,\"%\")\n",
+    "  print(\"CM = \\n\",confusion_matrix(y_test, y_pred1))\n",
+    "  print(\"\\n\\n\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/",
+     "height": 282
+    },
+    "id": "k2q3UQDkqXQB",
+    "outputId": "ebd04624-3b4a-459e-e2c0-b7fd42b64256"
+   },
+   "outputs": [],
+   "source": [
+    "plt.bar(p1.keys(),p1.values())"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "Z2OThE9Vgavv"
+   },
+   "source": [
+    "# RandomForest"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "wcZzCzMPo0OZ"
+   },
+   "outputs": [],
+   "source": [
+    "from sklearn.ensemble import RandomForestClassifier"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "aws74W0xnKIY"
+   },
+   "outputs": [],
+   "source": [
+    "para = [] # list to save all parameter values to plot\n",
+    "acc = [] # list to save all accuracy values to plot\n",
+    "for i in range(10,500,10):\n",
+    "  rfc = RandomForestClassifier(n_estimators=i)\n",
+    "  rfc = rfc.fit(x_train,y_train)\n",
+    "  y_pred1 = rfc.predict(x_test)\n",
+    "  para.append(i)\n",
+    "  acc.append(accuracy_score(y_test, y_pred1)*100)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "i0Wwj_cena_Y",
+    "outputId": "2fe4e7e0-30db-41c3-dc07-99a23942ebf4"
+   },
+   "outputs": [],
+   "source": [
+    "plt.plot(para,acc) #plotting accuracy vs parameter "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "YahdsB0BoTkS",
+    "outputId": "99f37b26-7cd0-4000-cbe2-59a06cac9f8f"
+   },
+   "outputs": [],
+   "source": [
+    "para[acc.index(max(acc))], max(acc)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "xSv5DMcfgeSJ",
+    "outputId": "4b58d88d-7a15-49de-838a-a061aa7cde18"
+   },
+   "outputs": [],
+   "source": [
+    "rfc = RandomForestClassifier(n_estimators=350)\n",
+    "rfc = rfc.fit(x_train,y_train)\n",
+    "y_pred1 = rfc.predict(x_test)\n",
+    "#Results\n",
+    "print(\"RandomForestClassifier Results\")\n",
+    "print(\"RandomForestClassifier Accuracy: \",accuracy_score(y_test, y_pred1)*100,\"%\")\n",
+    "print(\"CM = \\n\",confusion_matrix(y_test, y_pred1))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "DnYNsNu7hkqb"
+   },
+   "source": [
+    "# KNN"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "w_K-nod0hmkZ"
+   },
+   "outputs": [],
+   "source": [
+    "from sklearn.neighbors import KNeighborsClassifier"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "9O3dZdnGo--h"
+   },
+   "outputs": [],
+   "source": [
+    "para = []\n",
+    "acc = []\n",
+    "for i in range(1,50,1):\n",
+    "  knc = KNeighborsClassifier(n_neighbors= i,p = 3)\n",
+    "  knc = knc.fit(x_train,y_train)\n",
+    "  y_pred1 = knc.predict(x_test)\n",
+    "  para.append(i)\n",
+    "  acc.append(accuracy_score(y_test, y_pred1)*100)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/",
+     "height": 282
+    },
+    "id": "hcksssnxpRLR",
+    "outputId": "3ffa1306-b3f3-4d52-c025-45fc59fa364b"
+   },
+   "outputs": [],
+   "source": [
+    "plt.plot(para,acc)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "XfoilTdgpVTh",
+    "outputId": "f98c114d-3ffe-440a-e1c4-7f3cff60f8ee"
+   },
+   "outputs": [],
+   "source": [
+    "para[acc.index(max(acc))], max(acc)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "TnsO6zyrh3p4"
+   },
+   "outputs": [],
+   "source": [
+    "knc = KNeighborsClassifier(n_neighbors= 7,p = 3)\n",
+    "knc = knc.fit(x_train,y_train)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "ZlGgE1uKh_qJ",
+    "outputId": "902f916b-5b9a-4d15-d403-d3a73e41ec96"
+   },
+   "outputs": [],
+   "source": [
+    "y_pred1 = knc.predict(x_test)\n",
+    "#Results\n",
+    "print(\"KNN Results\")\n",
+    "print(\"KNN Accuracy: \",accuracy_score(y_test, y_pred1)*100,\"%\")\n",
+    "print(\"CM = \\n\",confusion_matrix(y_test, y_pred1))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "NT_dF_EJi7_n"
+   },
+   "source": [
+    "# GNB"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "R8q_KVTXiSj5"
+   },
+   "outputs": [],
+   "source": [
+    "from sklearn.naive_bayes import GaussianNB\n",
+    "gnb = GaussianNB()\n",
+    "gnb = gnb.fit(x_train,y_train)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "f0AzpHQyjt3o",
+    "outputId": "113efc04-833b-4a01-cc6f-ed1215281c12"
+   },
+   "outputs": [],
+   "source": [
+    "y_pred1 = knc.predict(x_test)\n",
+    "#Results\n",
+    "print(\"GaussianNB Results\")\n",
+    "print(\"GaussianNB Accuracy: \",accuracy_score(y_test, y_pred1)*100,\"%\")\n",
+    "print(\"CM = \\n\",confusion_matrix(y_test, y_pred1))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "bw-cDhQ1WLz4"
+   },
+   "source": [
+    "# TEST DT"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "YRlKBdvLWDHJ"
+   },
+   "source": [
+    "TESTING THE BEST MODEL (Random Forest) USING FOR LOOP"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "43_jtGGTWLz4"
+   },
+   "outputs": [],
+   "source": [
+    "def predictor(path, model):\n",
+    "  j = 0\n",
+    "  gath = []\n",
+    "  for i in os.listdir(path):\n",
+    "    if j == 200:\n",
+    "      break\n",
+    "    img=cv2.imread(os.path.join(path,i))\n",
+    "    resize=(280,430)\n",
+    "\n",
+    "    #resize image\n",
+    "    #img=cv2.resize(a,resize)\n",
+    "    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)\n",
+    "\n",
+    "    #initialise sift descriptor\n",
+    "    sift = cv2.xfeatures2d.SIFT_create()\n",
+    "    keypoints, descriptors = sift.detectAndCompute(gray, None)\n",
+    "    out=pd.DataFrame(descriptors)\n",
+    "    #initialise Kmeans and create 5 clusters\n",
+    "    #test the model for the features i.e. for all elements in the Dataframe\n",
+    "    array_double = np.array(out, dtype=np.double)\n",
+    "    a=kmeans.predict(array_double)\n",
+    "    hist=np.histogram(a,bins=[0,1,2,3,4,5])\n",
+    "    #Output = pd.DataFrame([hist[0]])\n",
+    "    gath.append(hist[0])\n",
+    "    j+=1\n",
+    "  scaler1 = pickle.load(open(\"/content/drive/MyDrive/CV_CP/430_all/PCA_5_430_SCALER.sav\", 'rb'))\n",
+    "  pca = pickle.load(open(\"/content/drive/MyDrive/CV_CP/430_all/PCA_5_430_Model.sav\", 'rb'))\n",
+    "  x = scaler.fit_transform(pd.DataFrame(gath))\n",
+    "  y = pca.transform(x)\n",
+    "  y_pred1 = model.predict(y)\n",
+    "  #prints the prediction of the class\n",
+    "  return y_pred1"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "BGEHxjtEWLz5",
+    "outputId": "e2ec13eb-f9e0-4867-8313-99e9cf29f5b8"
+   },
+   "outputs": [],
+   "source": [
+    "path = folder1\n",
+    "model = rfc\n",
+    "predictor(path, model)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "-utXwgeZBcCs"
+   },
+   "source": [
+    "# Dropping Negative Class"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "egWhn8XIBg1k"
+   },
+   "outputs": [],
+   "source": [
+    "data2 = data[data[5] != 2]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "xBBMx6GrCM9h"
+   },
+   "outputs": [],
+   "source": [
+    "#assigning x the columns from 1 to 128 for training\n",
+    "x = data2.iloc[:,0:5].values\n",
+    "#assigning y with the column \"Class\" as target variable\n",
+    "y = data2.iloc[:,5]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "nxo9yzF0CM9j"
+   },
+   "outputs": [],
+   "source": [
+    "#Dataset split into train and test with 80% Training and 20% Testing\n",
+    "x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.20, random_state=0)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "2fWsEoDKCVbn"
+   },
+   "source": [
+    "# DT"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "lwiq3fbNCVbo",
+    "outputId": "b3ec9d54-393a-4aeb-bbcf-e4dd506693cf"
+   },
+   "outputs": [],
+   "source": [
+    "#Decision Tree Classifier\n",
+    "from sklearn.metrics import accuracy_score, confusion_matrix\n",
+    "#Assign model with Decision Tree classifier\n",
+    "model1 = DecisionTreeClassifier(max_depth=40)\n",
+    "#training the model with the Training Variables \n",
+    "model1.fit(x_train, y_train)\n",
+    "#predicting the traget variable using testing variables\n",
+    "y_pred1 = model1.predict(x_test)\n",
+    "#Results\n",
+    "print(\"Decision Tree Results\")\n",
+    "print(\"Decision Tree Accuracy: \",accuracy_score(y_test, y_pred1)*100,\"%\")\n",
+    "print(\"CM = \\n\",confusion_matrix(y_test, y_pred1))"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "WPHKEb5HCVbp"
+   },
+   "outputs": [],
+   "source": [
+    "para = [] # list to save all parameter values to plot\n",
+    "acc = [] # list to save all accuracy values to plot\n",
+    "for i in range(10,200,10):\n",
+    "  model1 = DecisionTreeClassifier(max_depth=i)\n",
+    "  model1.fit(x_train, y_train) #fitting the model\n",
+    "  y_pred1 = model1.predict(x_test) # predicting the output\n",
+    "  para.append(i) #saving to list\n",
+    "  acc.append(accuracy_score(y_test, y_pred1)*100) #saving to list"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "FqdZZ2h7CVbp",
+    "outputId": "65c3e276-3d1a-41af-c8a2-af96868b71b7"
+   },
+   "outputs": [],
+   "source": [
+    "plt.plot(para,acc)"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "MXtQCvWiCVbp"
+   },
+   "source": [
+    "# SVM"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "8wzQ9B6gCVbq"
+   },
+   "outputs": [],
+   "source": [
+    "kernels = ['linear', 'poly', 'rbf', 'sigmoid'] #making a list of kernals for easy looping"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "brIdDrpyCoQc"
+   },
+   "outputs": [],
+   "source": [
+    "from sklearn.svm import SVC #importing the required model"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "s3kjr4nnCVbq",
+    "outputId": "d81be45f-f947-49f2-ab0d-539ef7826a04"
+   },
+   "outputs": [],
+   "source": [
+    "print(\"OVA\")\n",
+    "p = dict()\n",
+    "for i in kernels:\n",
+    "  SVM = SVC(kernel=i, decision_function_shape='ovr')\n",
+    "  SV = SVM.fit(x_train, y_train)\n",
+    "  y_pred1 = SV.predict(x_test)\n",
+    "  #Results\n",
+    "  p[i] = accuracy_score(y_test, y_pred1)*100\n",
+    "  print(\"SVM \" + i +\" Results\")\n",
+    "  print(\"SVM  \" + i +\" Accuracy: \",accuracy_score(y_test, y_pred1)*100,\"%\")\n",
+    "  print(\"CM = \\n\",confusion_matrix(y_test, y_pred1))\n",
+    "  print(\"\\n\\n\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "6z41kEhCCVbr",
+    "outputId": "7f759e27-2ff4-48dc-e06f-0fcd09e6759c"
+   },
+   "outputs": [],
+   "source": [
+    "plt.bar(p.keys(),p.values())"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "2UM-c4V8CVbr",
+    "outputId": "ef4171d6-f236-45c4-fc19-2e46521d38c6"
+   },
+   "outputs": [],
+   "source": [
+    "p1 = dict()\n",
+    "print(\"OVO\")\n",
+    "for i in kernels:\n",
+    "  SVM = SVC(kernel=i, decision_function_shape='ovo' )\n",
+    "  SV = SVM.fit(x_train, y_train)\n",
+    "  y_pred1 = SV.predict(x_test)\n",
+    "  #Results\n",
+    "  p1[i] = accuracy_score(y_test, y_pred1)*100\n",
+    "  print(\"SVM \" + i +\" Results\")\n",
+    "  print(\"SVM  \" + i +\" Accuracy: \",accuracy_score(y_test, y_pred1)*100,\"%\")\n",
+    "  print(\"CM = \\n\",confusion_matrix(y_test, y_pred1))\n",
+    "  print(\"\\n\\n\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "JN6wBUPWCVbr",
+    "outputId": "ef01508f-7a44-4c95-bb55-abc5b3299224"
+   },
+   "outputs": [],
+   "source": [
+    "plt.bar(p1.keys(),p1.values())"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "xQn6DbZqCVbr"
+   },
+   "source": [
+    "# RandomForest"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "iwcH98R5CVbr"
+   },
+   "outputs": [],
+   "source": [
+    "from sklearn.ensemble import RandomForestClassifier"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "v1zMzgPDCVbr"
+   },
+   "outputs": [],
+   "source": [
+    "para = []\n",
+    "acc = []\n",
+    "for i in range(10,500,10):\n",
+    "  rfc = RandomForestClassifier(n_estimators=i)\n",
+    "  rfc = rfc.fit(x_train,y_train)\n",
+    "  y_pred1 = rfc.predict(x_test)\n",
+    "  para.append(i)\n",
+    "  acc.append(accuracy_score(y_test, y_pred1)*100)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "-0lBDB0ECVbs",
+    "outputId": "79282fba-0877-4222-d504-b36a8a8b4306"
+   },
+   "outputs": [],
+   "source": [
+    "plt.plot(para,acc)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "1xT4PNDXCVbs",
+    "outputId": "d08defbf-2920-452f-bf2b-a57073269877"
+   },
+   "outputs": [],
+   "source": [
+    "para[acc.index(max(acc))], max(acc)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "2Lyn_2fGCVbs",
+    "outputId": "6706aead-d860-403f-9142-fae13e71a906"
+   },
+   "outputs": [],
+   "source": [
+    "rfc = RandomForestClassifier(n_estimators=420)\n",
+    "rfc = rfc.fit(x_train,y_train)\n",
+    "y_pred1 = rfc.predict(x_test)\n",
+    "#Results\n",
+    "print(\"RandomForestClassifier Results\")\n",
+    "print(\"RandomForestClassifier Accuracy: \",accuracy_score(y_test, y_pred1)*100,\"%\")\n",
+    "print(\"CM = \\n\",confusion_matrix(y_test, y_pred1))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "NTDSSax8CVbs"
+   },
+   "source": [
+    "# KNN"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "M7N3NUCzCVbs"
+   },
+   "outputs": [],
+   "source": [
+    "from sklearn.neighbors import KNeighborsClassifier"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "2vmWSnSxCVbs"
+   },
+   "outputs": [],
+   "source": [
+    "para = []\n",
+    "acc = []\n",
+    "for i in range(1,50,1):\n",
+    "  knc = KNeighborsClassifier(n_neighbors= i,p = 3)\n",
+    "  knc = knc.fit(x_train,y_train)\n",
+    "  y_pred1 = knc.predict(x_test)\n",
+    "  para.append(i)\n",
+    "  acc.append(accuracy_score(y_test, y_pred1)*100)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "YFlu1LpECVbs",
+    "outputId": "28043cbc-ff65-4fba-c1f4-141ffb633529"
+   },
+   "outputs": [],
+   "source": [
+    "plt.plot(para,acc)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "pP25svMUCVbs",
+    "outputId": "96f435a0-24e1-47ca-cf06-e777311d799f"
+   },
+   "outputs": [],
+   "source": [
+    "para[acc.index(max(acc))], max(acc)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "YKWTM0m9CVbt"
+   },
+   "outputs": [],
+   "source": [
+    "knc = KNeighborsClassifier(n_neighbors= 7,p = 3)\n",
+    "knc = knc.fit(x_train,y_train)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "n_DNDlj5CVbt",
+    "outputId": "fad94d09-e270-4900-8eb5-cc65859a134e"
+   },
+   "outputs": [],
+   "source": [
+    "y_pred1 = knc.predict(x_test)\n",
+    "#Results\n",
+    "print(\"KNN Results\")\n",
+    "print(\"KNN Accuracy: \",accuracy_score(y_test, y_pred1)*100,\"%\")\n",
+    "print(\"CM = \\n\",confusion_matrix(y_test, y_pred1))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "0jCTdh_YCVbt"
+   },
+   "source": [
+    "# GNB"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "um0DOKIXCVbt"
+   },
+   "outputs": [],
+   "source": [
+    "from sklearn.naive_bayes import GaussianNB\n",
+    "gnb = GaussianNB()\n",
+    "gnb = gnb.fit(x_train,y_train)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "q_YAZYYECVbt",
+    "outputId": "7bc18ed5-9117-4005-e2b2-dfcee181f201"
+   },
+   "outputs": [],
+   "source": [
+    "y_pred1 = gnb.predict(x_test)\n",
+    "#Results\n",
+    "print(\"GaussianNB Results\")\n",
+    "print(\"GaussianNB Accuracy: \",accuracy_score(y_test, y_pred1)*100,\"%\")\n",
+    "print(\"CM = \\n\",confusion_matrix(y_test, y_pred1))"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "9Ym7n2hPY9V6"
+   },
+   "source": [
+    "# TEST DT"
+   ]
+  },
+  {
+   "cell_type": "markdown",
+   "metadata": {
+    "id": "z-bTtusPY9V7"
+   },
+   "source": [
+    "TESTING THE BEST MODEL (Random Forest) USING FOR LOOP"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "id": "K86STwBcY9V7"
+   },
+   "outputs": [],
+   "source": [
+    "def predictor(path, model):\n",
+    "  j = 0\n",
+    "  gath = []\n",
+    "  for i in os.listdir(path):\n",
+    "    if j == 200:\n",
+    "      break\n",
+    "    img=cv2.imread(os.path.join(path,i))\n",
+    "    resize=(280,430)\n",
+    "\n",
+    "    #resize image\n",
+    "    #img=cv2.resize(a,resize)\n",
+    "    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)\n",
+    "\n",
+    "    #initialise sift descriptor\n",
+    "    sift = cv2.xfeatures2d.SIFT_create()\n",
+    "    keypoints, descriptors = sift.detectAndCompute(gray, None)\n",
+    "    out=pd.DataFrame(descriptors)\n",
+    "    #initialise Kmeans and create 5 clusters\n",
+    "    #test the model for the features i.e. for all elements in the Dataframe\n",
+    "    array_double = np.array(out, dtype=np.double)\n",
+    "    a=kmeans.predict(array_double)\n",
+    "    hist=np.histogram(a,bins=[0,1,2,3,4,5])\n",
+    "    #Output = pd.DataFrame([hist[0]])\n",
+    "    gath.append(hist[0])\n",
+    "    j+=1\n",
+    "  scaler1 = pickle.load(open(\"/content/drive/MyDrive/CV_CP/430_all/PCA_5_430_SCALER.sav\", 'rb'))\n",
+    "  pca = pickle.load(open(\"/content/drive/MyDrive/CV_CP/430_all/PCA_5_430_Model.sav\", 'rb'))\n",
+    "  x = scaler.fit_transform(pd.DataFrame(gath))\n",
+    "  y = pca.transform(x)\n",
+    "  y_pred1 = model.predict(y)\n",
+    "  #prints the prediction of the class\n",
+    "  return y_pred1"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "colab": {
+     "base_uri": "https://localhost:8080/"
+    },
+    "id": "06lJqNKEY9V8",
+    "outputId": "8f71874c-beb0-48c5-9596-202e08f01b05"
+   },
+   "outputs": [],
+   "source": [
+    "path = folder1\n",
+    "model = rfc\n",
+    "predictor(path, model)"
+   ]
+  }
+ ],
+ "metadata": {
+  "colab": {
+   "collapsed_sections": [],
+   "name": "CV_CP.ipynb",
+   "provenance": []
+  },
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.9.7"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 4
+}
